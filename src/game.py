@@ -196,7 +196,8 @@ class Game:
         # Update ball
         self.ball.update(self.grid, self.options.grid_size)
 
-        # Check for goals
+        # Calculate goal dimensions
+        goal_height = self.options.goal_size * self.options.cell_size
         goal_top = (self.height - goal_height) // 2 // self.options.cell_size
         goal_bottom = goal_top + self.options.goal_size
         
