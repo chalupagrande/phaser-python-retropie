@@ -18,7 +18,6 @@ class Ball:
     def update(self, grid, grid_size):
         # Store old position and cell
         old_pos = self.pos.copy()
-        old_cell = [int(old_pos[0]), int(old_pos[1])]
         
         # Calculate new position with smooth movement
         new_x = self.pos[0] + self.velocity[0] * self.speed_multiplier * self.base_speed
@@ -37,8 +36,9 @@ class Ball:
         # Update position
         self.pos = [new_x, new_y]
         
-        # Get current cell
+        # Get cell that contains the center of the ball
         current_cell = [int(self.pos[0]), int(self.pos[1])]
+        old_cell = [int(old_pos[0]), int(old_pos[1])]
         
         # Check if we've moved to a new cell
         if current_cell[0] != old_cell[0] or current_cell[1] != old_cell[1]:
@@ -52,31 +52,35 @@ class Ball:
                     grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
 
     def apply_tile_effect(self, tile_type):
-        # Center the ball in the current cell before changing direction
+        # Get the exact center of the current cell
         current_cell = [int(self.pos[0]), int(self.pos[1])]
         cell_center_x = current_cell[0] + 0.5
         cell_center_y = current_cell[1] + 0.5
         
-        # Apply the tile effect
+        # Apply the tile effect and center the ball precisely
         if tile_type == TileType.UP:
             self.velocity = [0, -1]
-            self.pos[0] = cell_center_x  # Center horizontally
+            # Center the ball horizontally in the cell
+            self.pos[0] = cell_center_x
         elif tile_type == TileType.DOWN:
             self.velocity = [0, 1]
-            self.pos[0] = cell_center_x  # Center horizontally
+            # Center the ball horizontally in the cell
+            self.pos[0] = cell_center_x
         elif tile_type == TileType.LEFT:
             self.velocity = [-1, 0]
-            self.pos[1] = cell_center_y  # Center vertically
+            # Center the ball vertically in the cell
+            self.pos[1] = cell_center_y
         elif tile_type == TileType.RIGHT:
             self.velocity = [1, 0]
-            self.pos[1] = cell_center_y  # Center vertically
+            # Center the ball vertically in the cell
+            self.pos[1] = cell_center_y
         elif tile_type == TileType.SPEED_UP:
             self.speed_multiplier += 0.5
 
     def reset(self, grid_size, initial_speed=None):
+        # Position the ball exactly at the center of the grid
         self.pos = [float(grid_size[0]) / 2, float(grid_size[1]) / 2]
         self.velocity = [0, random.choice([-1, 1])]
         self.speed_multiplier = 1.0
         if initial_speed is not None:
             self.base_speed = initial_speed
-        self.last_cell = [int(self.pos[0]), int(self.pos[1])]
