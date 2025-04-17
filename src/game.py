@@ -170,23 +170,23 @@ class Game:
 
         # Player 1 movement (WASD)
         if keys[pygame.K_w]:
-            self.player1.move_cursor(0, -1, self.options.grid_size)
+            self.player1.move_cursor(0, -1, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_s]:
-            self.player1.move_cursor(0, 1, self.options.grid_size)
+            self.player1.move_cursor(0, 1, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_a]:
-            self.player1.move_cursor(-1, 0, self.options.grid_size)
+            self.player1.move_cursor(-1, 0, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_d]:
-            self.player1.move_cursor(1, 0, self.options.grid_size)
+            self.player1.move_cursor(1, 0, self.options.grid_size, self.options.cursor_sensitivity)
 
         # Player 2 movement (Arrow keys)
         if keys[pygame.K_UP]:
-            self.player2.move_cursor(0, -1, self.options.grid_size)
+            self.player2.move_cursor(0, -1, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_DOWN]:
-            self.player2.move_cursor(0, 1, self.options.grid_size)
+            self.player2.move_cursor(0, 1, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_LEFT]:
-            self.player2.move_cursor(-1, 0, self.options.grid_size)
+            self.player2.move_cursor(-1, 0, self.options.grid_size, self.options.cursor_sensitivity)
         if keys[pygame.K_RIGHT]:
-            self.player2.move_cursor(1, 0, self.options.grid_size)
+            self.player2.move_cursor(1, 0, self.options.grid_size, self.options.cursor_sensitivity)
 
     def update(self):
         # Update tile banks

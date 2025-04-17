@@ -7,3 +7,4 @@ class GameOptions:
         self.tile_bank_size = 3  # Number of slots in the tile bank
         self.tile_replenish_time = 3  # Seconds to replenish a tile
         self.game_duration = 300  # Game duration in seconds (5 minutes)
+        self.cursor_sensitivity = 0.2  # Lower values make cursor movement less sensitive
