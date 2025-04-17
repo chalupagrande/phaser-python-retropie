@@ -311,12 +311,23 @@ class Game:
         # Draw ball (shifted down to accommodate the top UI)
         ball_radius = self.options.cell_size // 3
         ball_x = int(
-            self.ball.pos[0] * self.options.cell_size + self.options.cell_size // 2
+            self.ball.pos[0] * self.options.cell_size
         )
         ball_y = int(
-            self.ball.pos[1] * self.options.cell_size + self.options.cell_size // 2 + 100  # Shift down by 100px
+            self.ball.pos[1] * self.options.cell_size + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
+        
+        # Draw grid cell boundaries for debugging
+        current_cell_x = int(self.ball.pos[0])
+        current_cell_y = int(self.ball.pos[1])
+        cell_rect = pygame.Rect(
+            current_cell_x * self.options.cell_size,
+            current_cell_y * self.options.cell_size + 100,
+            self.options.cell_size,
+            self.options.cell_size
+        )
+        pygame.draw.rect(self.screen, GREEN, cell_rect, 1)
         
         # Draw a small dot at the center of the ball for visual reference
         pygame.draw.circle(self.screen, RED, (ball_x, ball_y), 2)
