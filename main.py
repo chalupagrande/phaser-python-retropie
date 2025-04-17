@@ -1,6 +1,8 @@
 # main.py
 import pygame
 import sys
+
+sys.path.insert(1, "src")
 from game_options import GameOptions
 from game import Game
 
