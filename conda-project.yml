@@ -1,0 +1,6 @@
+name: phaser-2
+environments:
+  default:
+    - environment.yml
+variables: {}
+commands: {}
