@@ -36,12 +36,15 @@ class Ball:
         new_y = self.pos[1] + dy
         
         # Handle horizontal boundaries - only bounce if not in goal area
-        goal_top = grid_size[1] // 2 - 1.5  # Approximate goal top position
-        goal_bottom = grid_size[1] // 2 + 1.5  # Approximate goal bottom position
+        goal_height_cells = 3  # Match the goal_size in GameOptions
+        goal_center_y = grid_size[1] / 2
+        goal_top = goal_center_y - (goal_height_cells / 2)
+        goal_bottom = goal_top + goal_height_cells
         
         # Check if ball is within goal height range
         in_goal_range = goal_top <= new_y <= goal_bottom
         
+        # Only bounce if not in goal range
         if (new_x < 0 or new_x >= grid_size[0]) and not in_goal_range:
             self.velocity[0] *= -1  # Bounce horizontally
             new_x = max(0.01, min(grid_size[0] - 0.01, old_pos[0]))

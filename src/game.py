@@ -105,17 +105,14 @@ class Game:
         # Update ball
         self.ball.update(self.grid, self.options.grid_size)
 
-        # Calculate goal dimensions
-        goal_height = self.options.goal_size * self.options.cell_size
-        goal_top = (self.height - goal_height) // 2 // self.options.cell_size
-        goal_bottom = goal_top + self.options.goal_size
+        # Calculate goal dimensions in grid coordinates
+        goal_height_cells = self.options.goal_size
+        goal_center_y = self.options.grid_size[1] / 2
+        goal_top_cell = goal_center_y - (goal_height_cells / 2)
+        goal_bottom_cell = goal_top_cell + goal_height_cells
         
         # Check if ball is within goal height range
-        # Adjust goal_top and goal_bottom to account for the UI offset
-        adjusted_goal_top = goal_top + 2  # Add offset to match visual position
-        adjusted_goal_bottom = goal_bottom + 2  # Add offset to match visual position
-        
-        if adjusted_goal_top <= self.ball.pos[1] < adjusted_goal_bottom:
+        if goal_top_cell <= self.ball.pos[1] <= goal_bottom_cell:
             # Check for left goal (Player 2 scores)
             if self.ball.pos[0] <= 0.1:  # Use a small threshold to detect goal
                 self.player2.score += 1
@@ -285,13 +282,13 @@ class Game:
 
         # Draw goals (shifted down to accommodate the top UI)
         goal_height = self.options.goal_size * self.options.cell_size
-        goal_y = (self.height - goal_height) // 2 + 50  # Adjust for the top UI
+        goal_y = (self.height - goal_height) // 2  # Center vertically in game area
 
         # Player 1 goal (left)
         goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
         
-        # Draw goal area indicator for debugging
+        # Draw goal area indicator
         goal_area_rect = pygame.Rect(
             0, goal_y, self.options.cell_size, goal_height
         )
@@ -303,7 +300,7 @@ class Game:
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
         
-        # Draw goal area indicator for debugging
+        # Draw goal area indicator
         goal_area_rect = pygame.Rect(
             (self.options.grid_size[0] - 1) * self.options.cell_size, 
             goal_y, 
