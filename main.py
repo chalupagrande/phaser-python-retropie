@@ -6,6 +6,7 @@ sys.path.insert(1, "src")
 from game_options import GameOptions
 from game import Game
 from menu import Menu
+from welcome_screen import WelcomeScreen
 
 
 def main():
@@ -16,20 +17,30 @@ def main():
     # Create game options with default values
     options = GameOptions()
     
-    # Create a temporary screen for the menu
-    # We'll recreate the screen with proper dimensions after menu configuration
+    # Create a screen for the welcome screen and menu
     screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Game Configuration")
+    pygame.display.set_caption("Tile Strategy Game")
     
-    # Run the menu
-    menu = Menu(screen, options)
-    start_game = menu.run()
-    
-    # If the user chose to start the game
-    if start_game:
-        # Create and run the game with configured options
-        game = Game(options)
-        game.run()
+    while True:
+        # Show welcome screen
+        welcome = WelcomeScreen(screen)
+        choice = welcome.run()
+        
+        if choice == 'start':
+            # Start the game directly
+            game = Game(options)
+            game.run()
+            # After game ends, return to welcome screen
+        elif choice == 'options':
+            # Show options menu
+            menu = Menu(screen, options)
+            menu_result = menu.run()
+            
+            if menu_result == 'start':
+                # Start game after configuring options
+                game = Game(options)
+                game.run()
+                # After game ends, return to welcome screen
 
 
 if __name__ == "__main__":

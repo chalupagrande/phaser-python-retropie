@@ -59,7 +59,7 @@ class Menu:
         self.items = []
         self.selected_index = 0
         self.running = True
-        self.game_started = False
+        self.result = None  # 'start' or 'back'
         
         # Create menu items
         self.create_menu_items()
@@ -111,8 +111,9 @@ class Menu:
             
         self.items.append(MenuItem("Ball Speed", self.options.initial_ball_speed, 0.1, 0.5, options=[0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5], callback=update_ball_speed))
         
-        # Start game option
+        # Navigation options
         self.items.append(MenuItem("START GAME", None))
+        self.items.append(MenuItem("BACK TO MAIN MENU", None))
         
         # Set first item as selected
         self.items[0].selected = True
@@ -149,8 +150,12 @@ class Menu:
                 # Selection
                 elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                     # If START GAME is selected
-                    if self.selected_index == len(self.items) - 1:
-                        self.game_started = True
+                    if self.selected_index == len(self.items) - 2:
+                        self.result = 'start'
+                        self.running = False
+                    # If BACK TO MAIN MENU is selected
+                    elif self.selected_index == len(self.items) - 1:
+                        self.result = 'back'
                         self.running = False
     
     def draw(self):
@@ -172,10 +177,16 @@ class Menu:
         for item in self.items:
             y = item.draw(self.screen, self.width // 2 - 200, y, self.font)
             
-        # Draw start game highlight if selected
-        if self.selected_index == len(self.items) - 1:
+        # Draw navigation options highlights if selected
+        if self.selected_index == len(self.items) - 2:  # START GAME
             start_text = self.font.render("START GAME", True, YELLOW)
-            text_rect = start_text.get_rect(center=(self.width // 2, y - 40))
+            text_rect = start_text.get_rect(center=(self.width // 2, y - 80))
+            pygame.draw.rect(self.screen, RED, 
+                            (text_rect.left - 10, text_rect.top - 5, 
+                             text_rect.width + 20, text_rect.height + 10), 3)
+        elif self.selected_index == len(self.items) - 1:  # BACK TO MAIN MENU
+            back_text = self.font.render("BACK TO MAIN MENU", True, YELLOW)
+            text_rect = back_text.get_rect(center=(self.width // 2, y - 40))
             pygame.draw.rect(self.screen, RED, 
                             (text_rect.left - 10, text_rect.top - 5, 
                              text_rect.width + 20, text_rect.height + 10), 3)
@@ -189,4 +200,4 @@ class Menu:
             self.draw()
             pygame.time.delay(30)
             
-        return self.game_started
+        return self.result
