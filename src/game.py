@@ -111,14 +111,20 @@ class Game:
         goal_bottom = goal_top + self.options.goal_size
         
         # Check if ball is within goal height range
-        if goal_top <= self.ball.pos[1] < goal_bottom:
+        # Adjust goal_top and goal_bottom to account for the UI offset
+        adjusted_goal_top = goal_top + 2  # Add offset to match visual position
+        adjusted_goal_bottom = goal_bottom + 2  # Add offset to match visual position
+        
+        if adjusted_goal_top <= self.ball.pos[1] < adjusted_goal_bottom:
             # Check for left goal (Player 2 scores)
-            if self.ball.pos[0] <= 0:
+            if self.ball.pos[0] <= 0.1:  # Use a small threshold to detect goal
                 self.player2.score += 1
+                print(f"GOAL! Player 2 scores! New score: P1 {self.player1.score} - {self.player2.score} P2")
                 self.ball.reset(self.options.grid_size)
             # Check for right goal (Player 1 scores)
-            elif self.ball.pos[0] >= self.options.grid_size[0] - 1:
+            elif self.ball.pos[0] >= self.options.grid_size[0] - 0.1:  # Use a small threshold
                 self.player1.score += 1
+                print(f"GOAL! Player 1 scores! New score: P1 {self.player1.score} - {self.player2.score} P2")
                 self.ball.reset(self.options.grid_size)
         # Ball hit wall but not goal
         elif self.ball.pos[0] < 0 or self.ball.pos[0] >= self.options.grid_size[0]:
@@ -284,12 +290,27 @@ class Game:
         # Player 1 goal (left)
         goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
+        
+        # Draw goal area indicator for debugging
+        goal_area_rect = pygame.Rect(
+            0, goal_y, self.options.cell_size, goal_height
+        )
+        pygame.draw.rect(self.screen, (255, 200, 200, 128), goal_area_rect)  # Semi-transparent red
 
         # Player 2 goal (right)
         goal2_rect = pygame.Rect(
             self.options.grid_size[0] * self.options.cell_size - 10, goal_y, 10, goal_height
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
+        
+        # Draw goal area indicator for debugging
+        goal_area_rect = pygame.Rect(
+            (self.options.grid_size[0] - 1) * self.options.cell_size, 
+            goal_y, 
+            self.options.cell_size, 
+            goal_height
+        )
+        pygame.draw.rect(self.screen, (200, 200, 255, 128), goal_area_rect)  # Semi-transparent blue
 
         # Draw player cursors (shifted down to accommodate the top UI)
         p1_cursor_rect = pygame.Rect(
