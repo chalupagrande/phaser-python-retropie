@@ -42,10 +42,10 @@ class MenuItem:
         text_surface = font.render(f"{self.text}: ", True, color)
         screen.blit(text_surface, (x, y))
         
-        # Draw value with arrows
+        # Draw value with arrows (with more space)
         value_text = str(self.value)
         value_surface = font.render(f"< {value_text} >", True, border_color)
-        screen.blit(value_surface, (x + 250, y))
+        screen.blit(value_surface, (x + 350, y))
         
         return y + 40  # Return next y position
 
@@ -111,8 +111,7 @@ class Menu:
             
         self.items.append(MenuItem("Ball Speed", self.options.initial_ball_speed, 0.1, 0.5, options=[0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5], callback=update_ball_speed))
         
-        # Navigation options
-        self.items.append(MenuItem("START GAME", None))
+        # Navigation option
         self.items.append(MenuItem("BACK TO MAIN MENU", None))
         
         # Set first item as selected
@@ -149,12 +148,8 @@ class Menu:
                     
                 # Selection
                 elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                    # If START GAME is selected
-                    if self.selected_index == len(self.items) - 2:
-                        self.result = 'start'
-                        self.running = False
                     # If BACK TO MAIN MENU is selected
-                    elif self.selected_index == len(self.items) - 1:
+                    if self.selected_index == len(self.items) - 1:
                         self.result = 'back'
                         self.running = False
     
@@ -177,14 +172,8 @@ class Menu:
         for item in self.items:
             y = item.draw(self.screen, self.width // 2 - 200, y, self.font)
             
-        # Draw navigation options highlights if selected
-        if self.selected_index == len(self.items) - 2:  # START GAME
-            start_text = self.font.render("START GAME", True, YELLOW)
-            text_rect = start_text.get_rect(center=(self.width // 2, y - 80))
-            pygame.draw.rect(self.screen, RED, 
-                            (text_rect.left - 10, text_rect.top - 5, 
-                             text_rect.width + 20, text_rect.height + 10), 3)
-        elif self.selected_index == len(self.items) - 1:  # BACK TO MAIN MENU
+        # Draw navigation option highlight if selected
+        if self.selected_index == len(self.items) - 1:  # BACK TO MAIN MENU
             back_text = self.font.render("BACK TO MAIN MENU", True, YELLOW)
             text_rect = back_text.get_rect(center=(self.width // 2, y - 40))
             pygame.draw.rect(self.screen, RED, 

@@ -36,11 +36,7 @@ def main():
             menu = Menu(screen, options)
             menu_result = menu.run()
             
-            if menu_result == 'start':
-                # Start game after configuring options
-                game = Game(options)
-                game.run()
-                # After game ends, return to welcome screen
+            # After options menu, return to welcome screen
 
 
 if __name__ == "__main__":

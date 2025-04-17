@@ -39,7 +39,7 @@ class WelcomeScreen:
         self.screen.fill(BLACK)
         
         # Draw title
-        title_surface = self.title_font.render("TILE STRATEGY GAME", True, WHITE)
+        title_surface = self.title_font.render("PHASER", True, WHITE)
         title_rect = title_surface.get_rect(center=(self.width // 2, self.height // 3))
         self.screen.blit(title_surface, title_rect)
         
