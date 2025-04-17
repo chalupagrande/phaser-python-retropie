@@ -61,129 +61,41 @@ class Game:
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                # Player 1 movement (WASD)
-                if event.key == pygame.K_w:
+                # Player 1 movement
+                if event.key == self.options.p1_controls['up']:
                     self.player1.move_cursor(0, -1, self.options.grid_size)
-                elif event.key == pygame.K_s:
+                elif event.key == self.options.p1_controls['down']:
                     self.player1.move_cursor(0, 1, self.options.grid_size)
-                elif event.key == pygame.K_a:
+                elif event.key == self.options.p1_controls['left']:
                     self.player1.move_cursor(-1, 0, self.options.grid_size)
-                elif event.key == pygame.K_d:
+                elif event.key == self.options.p1_controls['right']:
                     self.player1.move_cursor(1, 0, self.options.grid_size)
                 
-                # Player 2 movement (Arrow keys)
-                elif event.key == pygame.K_UP:
+                # Player 2 movement
+                elif event.key == self.options.p2_controls['up']:
                     self.player2.move_cursor(0, -1, self.options.grid_size)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == self.options.p2_controls['down']:
                     self.player2.move_cursor(0, 1, self.options.grid_size)
-                elif event.key == pygame.K_LEFT:
+                elif event.key == self.options.p2_controls['left']:
                     self.player2.move_cursor(-1, 0, self.options.grid_size)
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == self.options.p2_controls['right']:
                     self.player2.move_cursor(1, 0, self.options.grid_size)
                 
                 # Player 1 tile placement
-                elif (
-                    event.key == pygame.K_1
-                    and 0 <= self.player1.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player1.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player1.cursor_pos[1]][
-                            self.player1.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player1.tile_bank.use_tile(0)
-                        if tile:
-                            self.grid[self.player1.cursor_pos[1]][
-                                self.player1.cursor_pos[0]
-                            ] = tile
-
-                elif (
-                    event.key == pygame.K_2
-                    and 0 <= self.player1.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player1.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player1.cursor_pos[1]][
-                            self.player1.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player1.tile_bank.use_tile(1)
-                        if tile:
-                            self.grid[self.player1.cursor_pos[1]][
-                                self.player1.cursor_pos[0]
-                            ] = tile
-
-                elif (
-                    event.key == pygame.K_3
-                    and 0 <= self.player1.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player1.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player1.cursor_pos[1]][
-                            self.player1.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player1.tile_bank.use_tile(2)
-                        if tile:
-                            self.grid[self.player1.cursor_pos[1]][
-                                self.player1.cursor_pos[0]
-                            ] = tile
+                elif event.key == self.options.p1_controls['tile1']:
+                    self.place_tile(self.player1, 0)
+                elif event.key == self.options.p1_controls['tile2']:
+                    self.place_tile(self.player1, 1)
+                elif event.key == self.options.p1_controls['tile3']:
+                    self.place_tile(self.player1, 2)
 
                 # Player 2 tile placement
-                elif (
-                    event.key == pygame.K_i
-                    and 0 <= self.player2.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player2.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player2.cursor_pos[1]][
-                            self.player2.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player2.tile_bank.use_tile(0)
-                        if tile:
-                            self.grid[self.player2.cursor_pos[1]][
-                                self.player2.cursor_pos[0]
-                            ] = tile
-
-                elif (
-                    event.key == pygame.K_o
-                    and 0 <= self.player2.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player2.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player2.cursor_pos[1]][
-                            self.player2.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player2.tile_bank.use_tile(1)
-                        if tile:
-                            self.grid[self.player2.cursor_pos[1]][
-                                self.player2.cursor_pos[0]
-                            ] = tile
-
-                elif (
-                    event.key == pygame.K_p
-                    and 0 <= self.player2.cursor_pos[1] < self.options.grid_size[1]
-                    and 0 <= self.player2.cursor_pos[0] < self.options.grid_size[0]
-                ):
-                    if (
-                        self.grid[self.player2.cursor_pos[1]][
-                            self.player2.cursor_pos[0]
-                        ]
-                        is None
-                    ):
-                        tile = self.player2.tile_bank.use_tile(2)
-                        if tile:
-                            self.grid[self.player2.cursor_pos[1]][
-                                self.player2.cursor_pos[0]
-                            ] = tile
+                elif event.key == self.options.p2_controls['tile1']:
+                    self.place_tile(self.player2, 0)
+                elif event.key == self.options.p2_controls['tile2']:
+                    self.place_tile(self.player2, 1)
+                elif event.key == self.options.p2_controls['tile3']:
+                    self.place_tile(self.player2, 2)
 
         # Movement is now handled in the KEYDOWN event, not here
 
@@ -382,7 +294,13 @@ class Game:
         bank_title = self.font.render("Tile Bank", True, BLACK)
         self.screen.blit(bank_title, (sidebar_x + 50, 200))
 
-        p1_bank_text = self.small_font.render("Player 1 (1,2,3)", True, RED)
+        # Get key names for display
+        p1_tile_keys = [
+            pygame.key.name(self.options.p1_controls['tile1']),
+            pygame.key.name(self.options.p1_controls['tile2']),
+            pygame.key.name(self.options.p1_controls['tile3'])
+        ]
+        p1_bank_text = self.small_font.render(f"Player 1 ({p1_tile_keys[0]},{p1_tile_keys[1]},{p1_tile_keys[2]})", True, RED)
         self.screen.blit(p1_bank_text, (sidebar_x + 20, 240))
 
         for i in range(self.options.tile_bank_size):
@@ -395,7 +313,13 @@ class Game:
                     sidebar_x + 20 + i * 50, 270, self.player1.tile_bank.slots[i], 40
                 )
 
-        p2_bank_text = self.small_font.render("Player 2 (I,O,P)", True, BLUE)
+        # Get key names for display
+        p2_tile_keys = [
+            pygame.key.name(self.options.p2_controls['tile1']),
+            pygame.key.name(self.options.p2_controls['tile2']),
+            pygame.key.name(self.options.p2_controls['tile3'])
+        ]
+        p2_bank_text = self.small_font.render(f"Player 2 ({p2_tile_keys[0]},{p2_tile_keys[1]},{p2_tile_keys[2]})", True, BLUE)
         self.screen.blit(p2_bank_text, (sidebar_x + 20, 330))
 
         for i in range(self.options.tile_bank_size):
@@ -440,6 +364,15 @@ class Game:
         # Update display
         pygame.display.flip()
 
+    def place_tile(self, player, slot_index):
+        """Helper method to place a tile at the player's cursor position"""
+        if (0 <= player.cursor_pos[1] < self.options.grid_size[1] and
+            0 <= player.cursor_pos[0] < self.options.grid_size[0]):
+            if self.grid[player.cursor_pos[1]][player.cursor_pos[0]] is None:
+                tile = player.tile_bank.use_tile(slot_index)
+                if tile:
+                    self.grid[player.cursor_pos[1]][player.cursor_pos[0]] = tile
+                    
     def reset_game(self):
         # Reset grid
         self.grid = [

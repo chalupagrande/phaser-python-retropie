@@ -1,4 +1,6 @@
 # game_options.py
+import pygame
+
 class GameOptions:
     def __init__(self):
         self.grid_size = (20, 15)  # Width, Height in cells
@@ -9,3 +11,25 @@ class GameOptions:
         self.game_duration = 300  # Game duration in seconds (5 minutes)
         self.cursor_sensitivity = 0.2  # Lower values make cursor movement less sensitive
         self.initial_ball_speed = 0.2  # Initial speed of the ball in cells per tick
+        
+        # Player 1 controls
+        self.p1_controls = {
+            'up': pygame.K_w,
+            'down': pygame.K_s,
+            'left': pygame.K_a,
+            'right': pygame.K_d,
+            'tile1': pygame.K_1,
+            'tile2': pygame.K_2,
+            'tile3': pygame.K_3
+        }
+        
+        # Player 2 controls
+        self.p2_controls = {
+            'up': pygame.K_UP,
+            'down': pygame.K_DOWN,
+            'left': pygame.K_LEFT,
+            'right': pygame.K_RIGHT,
+            'tile1': pygame.K_i,
+            'tile2': pygame.K_o,
+            'tile3': pygame.K_p
+        }
