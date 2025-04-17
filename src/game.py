@@ -317,6 +317,9 @@ class Game:
             self.ball.pos[1] * self.options.cell_size + self.options.cell_size // 2 + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
+        
+        # Draw a small dot at the center of the ball for visual reference
+        pygame.draw.circle(self.screen, RED, (ball_x, ball_y), 2)
 
         # Draw game over message if needed
         if self.game_over:

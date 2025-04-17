@@ -1,76 +1,55 @@
 # ball.py
 import random
+import math
 from tile_type import TileType
 
 
 class Ball:
     def __init__(self, grid_size, initial_speed=0.2):
-        self.pos = [grid_size[0] // 2, grid_size[1] // 2]  # Center of grid
+        # Use floating point for precise position
+        self.pos = [float(grid_size[0]) / 2, float(grid_size[1]) / 2]  # Center of grid
         self.velocity = [0, random.choice([-1, 1])]  # Start moving vertically
         self.speed_multiplier = 1.0
         self.base_speed = initial_speed  # Cells per tick
-        self.accumulated_movement = [0, 0]
+        
+        # Track the last cell the ball was in to detect cell changes
+        self.last_cell = [int(self.pos[0]), int(self.pos[1])]
 
     def update(self, grid, grid_size):
-        # Apply velocity to position with accumulated fractional movement
-        self.accumulated_movement[0] += (
-            self.velocity[0] * self.speed_multiplier * self.base_speed
-        )
-        self.accumulated_movement[1] += (
-            self.velocity[1] * self.speed_multiplier * self.base_speed
-        )
-
-        # Extract whole cell movements
-        dx = int(self.accumulated_movement[0])
-        dy = int(self.accumulated_movement[1])
-
-        # Keep the fractional part
-        self.accumulated_movement[0] -= dx
-        self.accumulated_movement[1] -= dy
-
-        # Apply whole cell movements
-        if dx != 0 or dy != 0:
-            for _ in range(abs(dx) + abs(dy)):
-                # Move one step at a time
-                step_x = 1 if dx > 0 else (-1 if dx < 0 else 0)
-                step_y = 1 if dy > 0 else (-1 if dy < 0 else 0)
-
-                if abs(step_x) > 0 and abs(step_y) > 0:
-                    # Prioritize x movement if both
-                    if abs(dx) > abs(dy):
-                        next_x = self.pos[0] + step_x
-                        next_y = self.pos[1]
-                        dx -= step_x
-                    else:
-                        next_x = self.pos[0]
-                        next_y = self.pos[1] + step_y
-                        dy -= step_y
-                elif abs(step_x) > 0:
-                    next_x = self.pos[0] + step_x
-                    next_y = self.pos[1]
-                    dx -= step_x
-                else:
-                    next_x = self.pos[0]
-                    next_y = self.pos[1] + step_y
-                    dy -= step_y
-
-                # Check if the next position is within bounds
-                if next_x < 0 or next_x >= grid_size[0]:
-                    self.velocity[0] *= -1  # Bounce horizontally
-                    next_x = self.pos[0]  # Stay at current position
-
-                if next_y < 0 or next_y >= grid_size[1]:
-                    self.velocity[1] *= -1  # Bounce vertically
-                    next_y = self.pos[1]  # Stay at current position
-
-                self.pos = [next_x, next_y]
-
-                # Check if ball is on a tile and apply effect
-                if 0 <= self.pos[0] < grid_size[0] and 0 <= self.pos[1] < grid_size[1]:
-                    tile = grid[self.pos[1]][self.pos[0]]
-                    if tile is not None:
-                        self.apply_tile_effect(tile)
-                        grid[self.pos[1]][self.pos[0]] = None  # Remove the tile
+        # Store old position and cell
+        old_pos = self.pos.copy()
+        old_cell = [int(old_pos[0]), int(old_pos[1])]
+        
+        # Calculate new position with smooth movement
+        new_x = self.pos[0] + self.velocity[0] * self.speed_multiplier * self.base_speed
+        new_y = self.pos[1] + self.velocity[1] * self.speed_multiplier * self.base_speed
+        
+        # Handle horizontal boundaries
+        if new_x < 0 or new_x >= grid_size[0]:
+            self.velocity[0] *= -1  # Bounce horizontally
+            new_x = max(0, min(grid_size[0] - 0.01, old_pos[0]))
+        
+        # Handle vertical boundaries
+        if new_y < 0 or new_y >= grid_size[1]:
+            self.velocity[1] *= -1  # Bounce vertically
+            new_y = max(0, min(grid_size[1] - 0.01, old_pos[1]))
+        
+        # Update position
+        self.pos = [new_x, new_y]
+        
+        # Get current cell
+        current_cell = [int(self.pos[0]), int(self.pos[1])]
+        
+        # Check if we've moved to a new cell
+        if current_cell[0] != old_cell[0] or current_cell[1] != old_cell[1]:
+            # Check if the new cell has a tile
+            if (0 <= current_cell[0] < grid_size[0] and 
+                0 <= current_cell[1] < grid_size[1]):
+                
+                tile = grid[current_cell[1]][current_cell[0]]
+                if tile is not None:
+                    self.apply_tile_effect(tile)
+                    grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
 
     def apply_tile_effect(self, tile_type):
         if tile_type == TileType.UP:
@@ -85,9 +64,9 @@ class Ball:
             self.speed_multiplier += 0.5
 
     def reset(self, grid_size, initial_speed=None):
-        self.pos = [grid_size[0] // 2, grid_size[1] // 2]
+        self.pos = [float(grid_size[0]) / 2, float(grid_size[1]) / 2]
         self.velocity = [0, random.choice([-1, 1])]
         self.speed_multiplier = 1.0
         if initial_speed is not None:
             self.base_speed = initial_speed
-        self.accumulated_movement = [0, 0]
+        self.last_cell = [int(self.pos[0]), int(self.pos[1])]
