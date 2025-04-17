@@ -52,14 +52,24 @@ class Ball:
                     grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
 
     def apply_tile_effect(self, tile_type):
+        # Center the ball in the current cell before changing direction
+        current_cell = [int(self.pos[0]), int(self.pos[1])]
+        cell_center_x = current_cell[0] + 0.5
+        cell_center_y = current_cell[1] + 0.5
+        
+        # Apply the tile effect
         if tile_type == TileType.UP:
             self.velocity = [0, -1]
+            self.pos[0] = cell_center_x  # Center horizontally
         elif tile_type == TileType.DOWN:
             self.velocity = [0, 1]
+            self.pos[0] = cell_center_x  # Center horizontally
         elif tile_type == TileType.LEFT:
             self.velocity = [-1, 0]
+            self.pos[1] = cell_center_y  # Center vertically
         elif tile_type == TileType.RIGHT:
             self.velocity = [1, 0]
+            self.pos[1] = cell_center_y  # Center vertically
         elif tile_type == TileType.SPEED_UP:
             self.speed_multiplier += 0.5
 
