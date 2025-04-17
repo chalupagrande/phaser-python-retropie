@@ -12,6 +12,7 @@ from tile_type import TileType
 class Game:
     def __init__(self, options):
         self.options = options
+        self.debug = False  # Set to True to enable debug output
 
         # Calculate window dimensions based on grid
         self.width = options.grid_size[0] * options.cell_size
@@ -110,6 +111,10 @@ class Game:
         goal_center_y = self.options.grid_size[1] / 2
         goal_top_cell = goal_center_y - (goal_height_cells / 2)
         goal_bottom_cell = goal_top_cell + goal_height_cells
+        
+        # Debug goal position
+        if self.debug:
+            print(f"Goal range: {goal_top_cell} to {goal_bottom_cell}, Ball Y: {self.ball.pos[1]}")
         
         # Check if ball is within goal height range
         if goal_top_cell <= self.ball.pos[1] <= goal_bottom_cell:
@@ -282,17 +287,26 @@ class Game:
 
         # Draw goals (shifted down to accommodate the top UI)
         goal_height = self.options.goal_size * self.options.cell_size
-        goal_y = (self.height - goal_height) // 2  # Center vertically in game area
+        
+        # Calculate goal position to match the logical goal position
+        goal_center_y = self.options.grid_size[1] / 2
+        goal_top_cell = goal_center_y - (self.options.goal_size / 2)
+        goal_y = int(goal_top_cell * self.options.cell_size) + 100  # Add UI offset
 
         # Player 1 goal (left)
         goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
         
-        # Draw goal area indicator
+        # Draw goal area indicator with grid lines
         goal_area_rect = pygame.Rect(
             0, goal_y, self.options.cell_size, goal_height
         )
         pygame.draw.rect(self.screen, (255, 200, 200, 128), goal_area_rect)  # Semi-transparent red
+        
+        # Draw horizontal lines to show goal cell boundaries
+        for i in range(self.options.goal_size + 1):
+            y_pos = goal_y + i * self.options.cell_size
+            pygame.draw.line(self.screen, RED, (0, y_pos), (self.options.cell_size, y_pos), 1)
 
         # Player 2 goal (right)
         goal2_rect = pygame.Rect(
@@ -300,7 +314,7 @@ class Game:
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
         
-        # Draw goal area indicator
+        # Draw goal area indicator with grid lines
         goal_area_rect = pygame.Rect(
             (self.options.grid_size[0] - 1) * self.options.cell_size, 
             goal_y, 
@@ -308,6 +322,13 @@ class Game:
             goal_height
         )
         pygame.draw.rect(self.screen, (200, 200, 255, 128), goal_area_rect)  # Semi-transparent blue
+        
+        # Draw horizontal lines to show goal cell boundaries
+        for i in range(self.options.goal_size + 1):
+            y_pos = goal_y + i * self.options.cell_size
+            pygame.draw.line(self.screen, BLUE, 
+                            ((self.options.grid_size[0] - 1) * self.options.cell_size, y_pos), 
+                            (self.options.grid_size[0] * self.options.cell_size, y_pos), 1)
 
         # Draw player cursors (shifted down to accommodate the top UI)
         p1_cursor_rect = pygame.Rect(
@@ -335,6 +356,10 @@ class Game:
             self.ball.pos[1] * self.options.cell_size + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
+        
+        # Draw crosshair at ball center for better visibility
+        pygame.draw.line(self.screen, RED, (ball_x - 5, ball_y), (ball_x + 5, ball_y), 1)
+        pygame.draw.line(self.screen, RED, (ball_x, ball_y - 5), (ball_x, ball_y + 5), 1)
         
         # Draw grid cell boundaries for debugging
         current_cell_x = int(self.ball.pos[0])
