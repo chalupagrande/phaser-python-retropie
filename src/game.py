@@ -197,14 +197,22 @@ class Game:
         self.ball.update(self.grid, self.options.grid_size)
 
         # Check for goals
-        if self.ball.pos[0] < 0:
-            # Player 2 scores
-            self.player2.score += 1
-            self.ball.reset(self.options.grid_size)
-        elif self.ball.pos[0] >= self.options.grid_size[0]:
-            # Player 1 scores
-            self.player1.score += 1
-            self.ball.reset(self.options.grid_size)
+        goal_top = (self.height - goal_height) // 2 // self.options.cell_size
+        goal_bottom = goal_top + self.options.goal_size
+        
+        # Check if ball is within goal height range
+        if goal_top <= self.ball.pos[1] < goal_bottom:
+            # Check for left goal (Player 2 scores)
+            if self.ball.pos[0] <= 0:
+                self.player2.score += 1
+                self.ball.reset(self.options.grid_size)
+            # Check for right goal (Player 1 scores)
+            elif self.ball.pos[0] >= self.options.grid_size[0] - 1:
+                self.player1.score += 1
+                self.ball.reset(self.options.grid_size)
+        # Ball hit wall but not goal
+        elif self.ball.pos[0] < 0 or self.ball.pos[0] >= self.options.grid_size[0]:
+            self.ball.velocity[0] *= -1  # Bounce horizontally
 
         # Check if game time is up
         current_time = time.time()
@@ -313,12 +321,12 @@ class Game:
         goal_y = (self.height - goal_height) // 2
 
         # Player 1 goal (left)
-        goal1_rect = pygame.Rect(-5, goal_y, 5, goal_height)
+        goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
 
         # Player 2 goal (right)
         goal2_rect = pygame.Rect(
-            self.options.grid_size[0] * self.options.cell_size, goal_y, 5, goal_height
+            self.options.grid_size[0] * self.options.cell_size - 10, goal_y, 10, goal_height
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
 
