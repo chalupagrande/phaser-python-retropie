@@ -6,6 +6,8 @@ If you need to edit any of these files, ask me to *add them to the chat* first.
 
 .gitignore
 
+AI_CONTEXT.md
+
 README.md
 
 conda-project.yml
@@ -142,11 +144,13 @@ from tile_type import TileType
 
 
 class TileBank:
-    def __init__(self, size, replenish_time):
+    def __init__(self, size, replenish_time, tile_limit=10):
         self.size = size
         self.replenish_time = replenish_time
+        self.tile_limit = tile_limit
         self.slots = [None] * size
         self.replenish_timers = [0] * size
+        self.tiles_on_board = 0  # Track how many tiles are currently on the board
 
         # Fill bank initially
         for i in range(size):
@@ -159,7 +163,17 @@ class TileBank:
         if self.slots[slot_index] is not None:
             tile = self.slots[slot_index]
             self.slots[slot_index] = None
-            self.replenish_timers[slot_index] = time.time() + self.replenish_time
+            
+            # Increment the tiles on board counter
+            self.tiles_on_board += 1
+            
+            # If we're under the tile limit, replenish immediately
+            if self.tiles_on_board < self.tile_limit:
+                self.replenish_timers[slot_index] = 0
+            else:
+                # Otherwise use the delay
+                self.replenish_timers[slot_index] = time.time() + self.replenish_time
+                
             return tile
         return None
 
@@ -168,6 +182,215 @@ class TileBank:
         for i in range(self.size):
             if self.slots[i] is None and current_time >= self.replenish_timers[i]:
                 self.slots[i] = random.choice(list(TileType))
+                
+    def reset(self):
+        """Reset the tile bank for a new game"""
+        self.tiles_on_board = 0
+        self.replenish_timers = [0] * self.size
+        for i in range(self.size):
+            self.slots[i] = random.choice(list(TileType))
+            
+    def remove_tile_from_board(self):
+        """Called when a tile is removed from the board (e.g., when ball hits it)"""
+        if self.tiles_on_board > 0:
+            self.tiles_on_board -= 1
+```
+
+src/menu.py
+```
+import pygame
+from colors import *
+
+class MenuItem:
+    def __init__(self, text, value, min_value=None, max_value=None, options=None, callback=None):
+        self.text = text
+        self.value = value
+        self.min_value = min_value
+        self.max_value = max_value
+        self.options = options
+        self.callback = callback
+        self.selected = False
+        self.editing = False
+        
+    def increase(self):
+        if self.options:
+            current_index = self.options.index(self.value)
+            next_index = (current_index + 1) % len(self.options)
+            self.value = self.options[next_index]
+        elif self.max_value is not None:
+            self.value = min(self.value + 1, self.max_value)
+        
+        if self.callback:
+            self.callback(self.value)
+            
+    def decrease(self):
+        if self.options:
+            current_index = self.options.index(self.value)
+            prev_index = (current_index - 1) % len(self.options)
+            self.value = self.options[prev_index]
+        elif self.min_value is not None:
+            self.value = max(self.value - 1, self.min_value)
+            
+        if self.callback:
+            self.callback(self.value)
+    
+    def draw(self, screen, x, y, font):
+        color = YELLOW if self.selected else WHITE
+        border_color = RED if self.editing else color
+        
+        # Draw item text
+        text_surface = font.render(f"{self.text}: ", True, color)
+        screen.blit(text_surface, (x, y))
+        
+        # Draw value with arrows (with more space)
+        value_text = str(self.value)
+        value_surface = font.render(f"< {value_text} >", True, border_color)
+        screen.blit(value_surface, (x + 350, y))
+        
+        return y + 40  # Return next y position
+
+class Menu:
+    def __init__(self, screen, options):
+        self.screen = screen
+        self.options = options
+        self.width, self.height = screen.get_size()
+        self.font = pygame.font.SysFont(None, 36)
+        self.title_font = pygame.font.SysFont(None, 72)
+        self.items = []
+        self.selected_index = 0
+        self.running = True
+        self.result = None  # 'start' or 'back'
+        
+        # Create menu items
+        self.create_menu_items()
+        
+    def create_menu_items(self):
+        # Grid size options
+        def update_grid_width(value):
+            self.options.grid_size = (value, self.options.grid_size[1])
+            
+        def update_grid_height(value):
+            self.options.grid_size = (self.options.grid_size[0], value)
+            
+        self.items.append(MenuItem("Grid Width", self.options.grid_size[0], 10, 30, callback=update_grid_width))
+        self.items.append(MenuItem("Grid Height", self.options.grid_size[1], 8, 20, callback=update_grid_height))
+        
+        # Cell size
+        def update_cell_size(value):
+            self.options.cell_size = value
+            
+        self.items.append(MenuItem("Cell Size", self.options.cell_size, 20, 60, options=[20, 30, 40, 50, 60], callback=update_cell_size))
+        
+        # Goal size
+        def update_goal_size(value):
+            self.options.goal_size = value
+            
+        self.items.append(MenuItem("Goal Size", self.options.goal_size, 2, 5, callback=update_goal_size))
+        
+        # Tile bank size
+        def update_tile_bank_size(value):
+            self.options.tile_bank_size = value
+            
+        self.items.append(MenuItem("Tile Bank Size", self.options.tile_bank_size, 1, 5, callback=update_tile_bank_size))
+        
+        # Tile replenish time
+        def update_replenish_time(value):
+            self.options.tile_replenish_time = value
+            
+        self.items.append(MenuItem("Tile Replenish Time (s)", self.options.tile_replenish_time, 1, 10, callback=update_replenish_time))
+        
+        # Tile limit before delay
+        def update_tile_limit(value):
+            self.options.tile_limit = value
+            
+        self.items.append(MenuItem("Tile Limit Before Delay", self.options.tile_limit, 5, 30, callback=update_tile_limit))
+        
+        # Game duration
+        def update_game_duration(value):
+            self.options.game_duration = value
+            
+        self.items.append(MenuItem("Game Duration (s)", self.options.game_duration, 60, 600, options=[60, 120, 180, 300, 600], callback=update_game_duration))
+        
+        # Ball speed
+        def update_ball_speed(value):
+            self.options.initial_ball_speed = value
+            
+        self.items.append(MenuItem("Ball Speed", self.options.initial_ball_speed, 0.1, 0.5, options=[0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5], callback=update_ball_speed))
+        
+        # Navigation option
+        self.items.append(MenuItem("BACK", None))
+        
+        # Set first item as selected
+        self.items[0].selected = True
+        
+    def handle_input(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+                
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+                    
+                # Navigation
+                if event.key == pygame.K_UP:
+                    self.items[self.selected_index].selected = False
+                    self.selected_index = (self.selected_index - 1) % len(self.items)
+                    self.items[self.selected_index].selected = True
+                    
+                elif event.key == pygame.K_DOWN:
+                    self.items[self.selected_index].selected = False
+                    self.selected_index = (self.selected_index + 1) % len(self.items)
+                    self.items[self.selected_index].selected = True
+                    
+                # Value adjustment
+                elif event.key == pygame.K_LEFT:
+                    self.items[self.selected_index].decrease()
+                    
+                elif event.key == pygame.K_RIGHT:
+                    self.items[self.selected_index].increase()
+                    
+                # Selection
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    # If BACK TO MAIN MENU is selected
+                    if self.selected_index == len(self.items) - 1:
+                        self.result = 'back'
+                        self.running = False
+    
+    def draw(self):
+        # Clear screen
+        self.screen.fill(BLACK)
+        
+        # Draw title
+        title_surface = self.title_font.render("GAME OPTIONS", True, WHITE)
+        title_rect = title_surface.get_rect(center=(self.width // 2, 50))
+        self.screen.blit(title_surface, title_rect)
+        
+        # Draw instructions
+        instructions = self.font.render("Use UP/DOWN to navigate, LEFT/RIGHT to change values", True, LIGHT_GRAY)
+        instructions_rect = instructions.get_rect(center=(self.width // 2, 100))
+        self.screen.blit(instructions, instructions_rect)
+        
+        # Draw menu items
+        y = 150
+        for item in self.items:
+            y = item.draw(self.screen, self.width // 2 - 200, y, self.font)
+            
+        # No special drawing for the Back option - it will just be yellow when selected
+        # through the normal MenuItem drawing process
+        
+        # Update display
+        pygame.display.flip()
+        
+    def run(self):
+        while self.running:
+            self.handle_input()
+            self.draw()
+            pygame.time.delay(30)
+            
+        return self.result
 ```
 
 src/game.py
@@ -186,6 +409,7 @@ from tile_type import TileType
 class Game:
     def __init__(self, options):
         self.options = options
+        self.debug = False  # Set to True to enable debug output
 
         # Calculate window dimensions based on grid
         self.width = options.grid_size[0] * options.cell_size
@@ -194,9 +418,26 @@ class Game:
         # Initialize display
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Tile Strategy Game")
+        
+        # Print configured options for debugging
+        if self.debug:
+            print(f"Game initialized with options:")
+            print(f"Grid size: {options.grid_size}")
+            print(f"Cell size: {options.cell_size}")
+            print(f"Goal size: {options.goal_size}")
+            print(f"Tile bank size: {options.tile_bank_size}")
+            print(f"Tile replenish time: {options.tile_replenish_time}")
+            print(f"Game duration: {options.game_duration}")
+            print(f"Ball speed: {options.initial_ball_speed}")
 
-        # Initialize game grid
+        # Initialize game grid with None values (no tiles)
         self.grid = [
+            [None for _ in range(options.grid_size[0])]
+            for _ in range(options.grid_size[1])
+        ]
+        
+        # Grid to track which player placed each tile
+        self.tile_owners = [
             [None for _ in range(options.grid_size[0])]
             for _ in range(options.grid_size[1])
         ]
@@ -211,10 +452,10 @@ class Game:
 
         # Initialize tile banks
         self.player1.tile_bank = TileBank(
-            options.tile_bank_size, options.tile_replenish_time
+            options.tile_bank_size, options.tile_replenish_time, options.tile_limit
         )
         self.player2.tile_bank = TileBank(
-            options.tile_bank_size, options.tile_replenish_time
+            options.tile_bank_size, options.tile_replenish_time, options.tile_limit
         )
 
         # Initialize ball
@@ -276,20 +517,37 @@ class Game:
         self.player1.tile_bank.update()
         self.player2.tile_bank.update()
 
+        # Store the grid before update to detect tile removals
+        old_grid = [row[:] for row in self.grid]
+        
         # Update ball
         self.ball.update(self.grid, self.options.grid_size)
+        
+        # Check for removed tiles and update tile counts
+        for y in range(self.options.grid_size[1]):
+            for x in range(self.options.grid_size[0]):
+                if old_grid[y][x] is not None and self.grid[y][x] is None:
+                    # A tile was removed at this position
+                    owner_id = self.tile_owners[y][x]
+                    if owner_id == 1:
+                        self.player1.tile_bank.remove_tile_from_board()
+                    elif owner_id == 2:
+                        self.player2.tile_bank.remove_tile_from_board()
+                    # Clear the owner
+                    self.tile_owners[y][x] = None
 
-        # Calculate goal dimensions
-        goal_height = self.options.goal_size * self.options.cell_size
-        goal_top = (self.height - goal_height) // 2 // self.options.cell_size
-        goal_bottom = goal_top + self.options.goal_size
+        # Calculate goal dimensions in grid coordinates
+        goal_height_cells = self.options.goal_size
+        goal_center_y = self.options.grid_size[1] / 2
+        goal_top_cell = goal_center_y - (goal_height_cells / 2)
+        goal_bottom_cell = goal_top_cell + goal_height_cells
+        
+        # Debug goal position
+        if self.debug:
+            print(f"Goal range: {goal_top_cell} to {goal_bottom_cell}, Ball Y: {self.ball.pos[1]}")
         
         # Check if ball is within goal height range
-        # Adjust goal_top and goal_bottom to account for the UI offset
-        adjusted_goal_top = goal_top + 2  # Add offset to match visual position
-        adjusted_goal_bottom = goal_bottom + 2  # Add offset to match visual position
-        
-        if adjusted_goal_top <= self.ball.pos[1] < adjusted_goal_bottom:
+        if goal_top_cell <= self.ball.pos[1] <= goal_bottom_cell:
             # Check for left goal (Player 2 scores)
             if self.ball.pos[0] <= 0.1:  # Use a small threshold to detect goal
                 self.player2.score += 1
@@ -411,13 +669,19 @@ class Game:
         p1_bank_text = self.small_font.render(f"P1 Tiles ({p1_tile_keys[0]},{p1_tile_keys[1]},{p1_tile_keys[2]})", True, RED)
         self.screen.blit(p1_bank_text, (20, 15))
         
+        # Display tiles on board count for Player 1
+        tiles_on_board = self.player1.tile_bank.tiles_on_board
+        tile_limit = self.player1.tile_bank.tile_limit
+        p1_count_text = self.small_font.render(f"Tiles: {tiles_on_board}/{tile_limit}", True, RED)
+        self.screen.blit(p1_count_text, (20, 35))
+        
         for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(20 + i * 50, 40, 40, 40)
+            bank_rect = pygame.Rect(20 + i * 50, 55, 40, 40)
             pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
             pygame.draw.rect(self.screen, RED, bank_rect, 2)
             
             if self.player1.tile_bank.slots[i] is not None:
-                self.draw_tile(20 + i * 50, 40, self.player1.tile_bank.slots[i], 40)
+                self.draw_tile(20 + i * 50, 55, self.player1.tile_bank.slots[i], 40)
         
         # Draw Player 2 tile bank (right side)
         p2_tile_keys = [
@@ -429,13 +693,20 @@ class Game:
         p2_text_width = p2_bank_text.get_width()
         self.screen.blit(p2_bank_text, (self.width - p2_text_width - 20, 15))
         
+        # Display tiles on board count for Player 2
+        tiles_on_board = self.player2.tile_bank.tiles_on_board
+        tile_limit = self.player2.tile_bank.tile_limit
+        p2_count_text = self.small_font.render(f"Tiles: {tiles_on_board}/{tile_limit}", True, BLUE)
+        p2_count_width = p2_count_text.get_width()
+        self.screen.blit(p2_count_text, (self.width - p2_count_width - 20, 35))
+        
         for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, 40, 40)
+            bank_rect = pygame.Rect(self.width - 20 - (self.options.tile_bank_size - i) * 50, 55, 40, 40)
             pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
             pygame.draw.rect(self.screen, BLUE, bank_rect, 2)
             
             if self.player2.tile_bank.slots[i] is not None:
-                self.draw_tile(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, self.player2.tile_bank.slots[i], 40)
+                self.draw_tile(self.width - 20 - (self.options.tile_bank_size - i) * 50, 55, self.player2.tile_bank.slots[i], 40)
         
         # Draw grid (shifted down to accommodate the top UI)
         for y in range(self.options.grid_size[1]):
@@ -459,17 +730,26 @@ class Game:
 
         # Draw goals (shifted down to accommodate the top UI)
         goal_height = self.options.goal_size * self.options.cell_size
-        goal_y = (self.height - goal_height) // 2 + 50  # Adjust for the top UI
+        
+        # Calculate goal position to match the logical goal position
+        goal_center_y = self.options.grid_size[1] / 2
+        goal_top_cell = goal_center_y - (self.options.goal_size / 2)
+        goal_y = int(goal_top_cell * self.options.cell_size) + 100  # Add UI offset
 
         # Player 1 goal (left)
         goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
         
-        # Draw goal area indicator for debugging
+        # Draw goal area indicator with grid lines
         goal_area_rect = pygame.Rect(
             0, goal_y, self.options.cell_size, goal_height
         )
         pygame.draw.rect(self.screen, (255, 200, 200, 128), goal_area_rect)  # Semi-transparent red
+        
+        # Draw horizontal lines to show goal cell boundaries
+        for i in range(self.options.goal_size + 1):
+            y_pos = goal_y + i * self.options.cell_size
+            pygame.draw.line(self.screen, RED, (0, y_pos), (self.options.cell_size, y_pos), 1)
 
         # Player 2 goal (right)
         goal2_rect = pygame.Rect(
@@ -477,7 +757,7 @@ class Game:
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
         
-        # Draw goal area indicator for debugging
+        # Draw goal area indicator with grid lines
         goal_area_rect = pygame.Rect(
             (self.options.grid_size[0] - 1) * self.options.cell_size, 
             goal_y, 
@@ -485,6 +765,13 @@ class Game:
             goal_height
         )
         pygame.draw.rect(self.screen, (200, 200, 255, 128), goal_area_rect)  # Semi-transparent blue
+        
+        # Draw horizontal lines to show goal cell boundaries
+        for i in range(self.options.goal_size + 1):
+            y_pos = goal_y + i * self.options.cell_size
+            pygame.draw.line(self.screen, BLUE, 
+                            ((self.options.grid_size[0] - 1) * self.options.cell_size, y_pos), 
+                            (self.options.grid_size[0] * self.options.cell_size, y_pos), 1)
 
         # Draw player cursors (shifted down to accommodate the top UI)
         p1_cursor_rect = pygame.Rect(
@@ -512,6 +799,10 @@ class Game:
             self.ball.pos[1] * self.options.cell_size + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
+        
+        # Draw crosshair at ball center for better visibility
+        pygame.draw.line(self.screen, RED, (ball_x - 5, ball_y), (ball_x + 5, ball_y), 1)
+        pygame.draw.line(self.screen, RED, (ball_x, ball_y - 5), (ball_x, ball_y + 5), 1)
         
         # Draw grid cell boundaries for debugging
         current_cell_x = int(self.ball.pos[0])
@@ -567,10 +858,18 @@ class Game:
                 tile = player.tile_bank.use_tile(slot_index)
                 if tile:
                     self.grid[player.cursor_pos[1]][player.cursor_pos[0]] = tile
+                    # Track which player placed this tile
+                    self.tile_owners[player.cursor_pos[1]][player.cursor_pos[0]] = player.id
                     
     def reset_game(self):
         # Reset grid
         self.grid = [
+            [None for _ in range(self.options.grid_size[0])]
+            for _ in range(self.options.grid_size[1])
+        ]
+        
+        # Reset tile owners
+        self.tile_owners = [
             [None for _ in range(self.options.grid_size[0])]
             for _ in range(self.options.grid_size[1])
         ]
@@ -588,10 +887,10 @@ class Game:
 
         # Reset tile banks
         self.player1.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time
+            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
         )
         self.player2.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time
+            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
         )
 
         # Reset ball
@@ -616,6 +915,92 @@ class Game:
 
             self.draw()
             clock.tick(60)
+```
+
+src/welcome_screen.py
+```
+import pygame
+from colors import *
+
+class WelcomeScreen:
+    def __init__(self, screen):
+        self.screen = screen
+        self.width, self.height = screen.get_size()
+        self.font = pygame.font.SysFont(None, 36)
+        self.title_font = pygame.font.SysFont(None, 72)
+        self.running = True
+        self.selected_option = 0  # 0 = Start Game, 1 = Options
+        self.result = None  # 'start' or 'options'
+        
+    def handle_input(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+                
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+                    
+                # Navigation
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    self.selected_option = 1 - self.selected_option  # Toggle between 0 and 1
+                    
+                # Selection
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    if self.selected_option == 0:
+                        self.result = 'start'
+                    else:
+                        self.result = 'options'
+                    self.running = False
+    
+    def draw(self):
+        # Clear screen
+        self.screen.fill(BLACK)
+        
+        # Draw title
+        title_surface = self.title_font.render("PHASER", True, WHITE)
+        title_rect = title_surface.get_rect(center=(self.width // 2, self.height // 3))
+        self.screen.blit(title_surface, title_rect)
+        
+        # Draw options
+        start_color = YELLOW if self.selected_option == 0 else WHITE
+        options_color = YELLOW if self.selected_option == 1 else WHITE
+        
+        start_text = self.font.render("START GAME", True, start_color)
+        start_rect = start_text.get_rect(center=(self.width // 2, self.height // 2))
+        self.screen.blit(start_text, start_rect)
+        
+        if self.selected_option == 0:
+            pygame.draw.rect(self.screen, RED, 
+                           (start_rect.left - 10, start_rect.top - 5, 
+                            start_rect.width + 20, start_rect.height + 10), 3)
+        
+        options_text = self.font.render("OPTIONS", True, options_color)
+        options_rect = options_text.get_rect(center=(self.width // 2, self.height // 2 + 50))
+        self.screen.blit(options_text, options_rect)
+        
+        if self.selected_option == 1:
+            pygame.draw.rect(self.screen, RED, 
+                           (options_rect.left - 10, options_rect.top - 5, 
+                            options_rect.width + 20, options_rect.height + 10), 3)
+        
+        # Draw instructions
+        instructions = self.font.render("Use UP/DOWN to navigate, ENTER to select", True, LIGHT_GRAY)
+        instructions_rect = instructions.get_rect(center=(self.width // 2, self.height * 3 // 4))
+        self.screen.blit(instructions, instructions_rect)
+        
+        # Update display
+        pygame.display.flip()
+        
+    def run(self):
+        while self.running:
+            self.handle_input()
+            self.draw()
+            pygame.time.delay(30)
+            
+        return self.result
 ```
 
 src/ball.py
@@ -658,12 +1043,15 @@ class Ball:
         new_y = self.pos[1] + dy
         
         # Handle horizontal boundaries - only bounce if not in goal area
-        goal_top = grid_size[1] // 2 - 1.5  # Approximate goal top position
-        goal_bottom = grid_size[1] // 2 + 1.5  # Approximate goal bottom position
+        goal_height_cells = 3  # Match the goal_size in GameOptions
+        goal_center_y = grid_size[1] / 2
+        goal_top = goal_center_y - (goal_height_cells / 2)
+        goal_bottom = goal_top + goal_height_cells
         
         # Check if ball is within goal height range
         in_goal_range = goal_top <= new_y <= goal_bottom
         
+        # Only bounce if not in goal range
         if (new_x < 0 or new_x >= grid_size[0]) and not in_goal_range:
             self.velocity[0] *= -1  # Bounce horizontally
             new_x = max(0.01, min(grid_size[0] - 0.01, old_pos[0]))
@@ -691,6 +1079,9 @@ class Ball:
                         print(f"Applying tile effect: {tile} at cell {current_cell}")
                     self.apply_tile_effect(tile)
                     grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
+                    
+                    # Determine which player's tile was hit and decrement their count
+                    # We'll implement this in the Game class
             
             # Update last cell
             self.last_cell = current_cell
@@ -742,15 +1133,19 @@ import pygame
 
 class GameOptions:
     def __init__(self):
+        # Game board configuration
         self.grid_size = (21, 15)  # Width, Height in cells
         self.cell_size = 40  # Size of each cell in pixels
         self.goal_size = 3  # Number of cells that make up the goal
+        
+        # Tile configuration
         self.tile_bank_size = 3  # Number of slots in the tile bank
         self.tile_replenish_time = 3  # Seconds to replenish a tile
-        self.game_duration = 300  # Game duration in seconds (5 minutes)
-        self.cursor_sensitivity = (
-            0.2  # Lower values make cursor movement less sensitive
-        )
+        self.tile_limit = 10  # Number of tiles a player can place before delay kicks in
+        
+        # Game mechanics
+        self.game_duration = 180  # Game duration in seconds (3 minutes)
+        self.cursor_sensitivity = 0.2  # Lower values make cursor movement less sensitive
         self.initial_ball_speed = 0.2  # Initial speed of the ball in cells per tick
 
         # Player 1 controls
@@ -790,6 +1185,8 @@ import sys
 sys.path.insert(1, "src")
 from game_options import GameOptions
 from game import Game
+from menu import Menu
+from welcome_screen import WelcomeScreen
 
 
 def main():
@@ -797,9 +1194,29 @@ def main():
     pygame.init()
     pygame.font.init()
 
+    # Create game options with default values
     options = GameOptions()
-    game = Game(options)
-    game.run()
+    
+    # Create a screen for the welcome screen and menu
+    screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption("Tile Strategy Game")
+    
+    while True:
+        # Show welcome screen
+        welcome = WelcomeScreen(screen)
+        choice = welcome.run()
+        
+        if choice == 'start':
+            # Start the game directly
+            game = Game(options)
+            game.run()
+            # After game ends, return to welcome screen
+        elif choice == 'options':
+            # Show options menu
+            menu = Menu(screen, options)
+            menu_result = menu.run()
+            
+            # After options menu, return to welcome screen
 
 
 if __name__ == "__main__":
