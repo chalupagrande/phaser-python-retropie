@@ -12,6 +12,7 @@ class GameOptions:
         # Tile configuration
         self.tile_bank_size = 3  # Number of slots in the tile bank
         self.tile_replenish_time = 3  # Seconds to replenish a tile
+        self.tile_limit = 10  # Number of tiles a player can place before delay kicks in
         
         # Game mechanics
         self.game_duration = 180  # Game duration in seconds (3 minutes)

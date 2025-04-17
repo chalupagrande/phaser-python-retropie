@@ -99,6 +99,12 @@ class Menu:
             
         self.items.append(MenuItem("Tile Replenish Time (s)", self.options.tile_replenish_time, 1, 10, callback=update_replenish_time))
         
+        # Tile limit before delay
+        def update_tile_limit(value):
+            self.options.tile_limit = value
+            
+        self.items.append(MenuItem("Tile Limit Before Delay", self.options.tile_limit, 5, 30, callback=update_tile_limit))
+        
         # Game duration
         def update_game_duration(value):
             self.options.game_duration = value

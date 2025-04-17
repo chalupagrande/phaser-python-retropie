@@ -49,10 +49,10 @@ class Game:
 
         # Initialize tile banks
         self.player1.tile_bank = TileBank(
-            options.tile_bank_size, options.tile_replenish_time
+            options.tile_bank_size, options.tile_replenish_time, options.tile_limit
         )
         self.player2.tile_bank = TileBank(
-            options.tile_bank_size, options.tile_replenish_time
+            options.tile_bank_size, options.tile_replenish_time, options.tile_limit
         )
 
         # Initialize ball
@@ -447,10 +447,10 @@ class Game:
 
         # Reset tile banks
         self.player1.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time
+            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
         )
         self.player2.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time
+            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
         )
 
         # Reset ball

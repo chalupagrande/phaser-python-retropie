@@ -5,11 +5,13 @@ from tile_type import TileType
 
 
 class TileBank:
-    def __init__(self, size, replenish_time):
+    def __init__(self, size, replenish_time, tile_limit=10):
         self.size = size
         self.replenish_time = replenish_time
+        self.tile_limit = tile_limit
         self.slots = [None] * size
         self.replenish_timers = [0] * size
+        self.tiles_placed = 0  # Track how many tiles have been placed
 
         # Fill bank initially
         for i in range(size):
@@ -22,7 +24,17 @@ class TileBank:
         if self.slots[slot_index] is not None:
             tile = self.slots[slot_index]
             self.slots[slot_index] = None
-            self.replenish_timers[slot_index] = time.time() + self.replenish_time
+            
+            # Increment the tiles placed counter
+            self.tiles_placed += 1
+            
+            # If we're under the tile limit, replenish immediately
+            if self.tiles_placed <= self.tile_limit:
+                self.replenish_timers[slot_index] = 0
+            else:
+                # Otherwise use the delay
+                self.replenish_timers[slot_index] = time.time() + self.replenish_time
+                
             return tile
         return None
 
@@ -31,3 +43,10 @@ class TileBank:
         for i in range(self.size):
             if self.slots[i] is None and current_time >= self.replenish_timers[i]:
                 self.slots[i] = random.choice(list(TileType))
+                
+    def reset(self):
+        """Reset the tile bank for a new game"""
+        self.tiles_placed = 0
+        self.replenish_timers = [0] * self.size
+        for i in range(self.size):
+            self.slots[i] = random.choice(list(TileType))
