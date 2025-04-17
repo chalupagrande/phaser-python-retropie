@@ -8,3 +8,4 @@ class GameOptions:
         self.tile_replenish_time = 3  # Seconds to replenish a tile
         self.game_duration = 300  # Game duration in seconds (5 minutes)
         self.cursor_sensitivity = 0.2  # Lower values make cursor movement less sensitive
+        self.initial_ball_speed = 0.2  # Initial speed of the ball in cells per tick

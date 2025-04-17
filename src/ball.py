@@ -4,11 +4,11 @@ from tile_type import TileType
 
 
 class Ball:
-    def __init__(self, grid_size):
+    def __init__(self, grid_size, initial_speed=0.2):
         self.pos = [grid_size[0] // 2, grid_size[1] // 2]  # Center of grid
         self.velocity = [0, random.choice([-1, 1])]  # Start moving vertically
         self.speed_multiplier = 1.0
-        self.base_speed = 0.2  # Cells per tick
+        self.base_speed = initial_speed  # Cells per tick
         self.accumulated_movement = [0, 0]
 
     def update(self, grid, grid_size):
@@ -84,8 +84,10 @@ class Ball:
         elif tile_type == TileType.SPEED_UP:
             self.speed_multiplier += 0.5
 
-    def reset(self, grid_size):
+    def reset(self, grid_size, initial_speed=None):
         self.pos = [grid_size[0] // 2, grid_size[1] // 2]
         self.velocity = [0, random.choice([-1, 1])]
         self.speed_multiplier = 1.0
+        if initial_speed is not None:
+            self.base_speed = initial_speed
         self.accumulated_movement = [0, 0]

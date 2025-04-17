@@ -46,7 +46,7 @@ class Game:
         )
 
         # Initialize ball
-        self.ball = Ball(options.grid_size)
+        self.ball = Ball(options.grid_size, options.initial_ball_speed)
 
         # Game state
         self.start_time = time.time()
@@ -468,7 +468,7 @@ class Game:
         )
 
         # Reset ball
-        self.ball.reset(self.options.grid_size)
+        self.ball.reset(self.options.grid_size, self.options.initial_ball_speed)
 
         # Reset game state
         self.start_time = time.time()
