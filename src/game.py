@@ -21,6 +21,17 @@ class Game:
         # Initialize display
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Tile Strategy Game")
+        
+        # Print configured options for debugging
+        if self.debug:
+            print(f"Game initialized with options:")
+            print(f"Grid size: {options.grid_size}")
+            print(f"Cell size: {options.cell_size}")
+            print(f"Goal size: {options.goal_size}")
+            print(f"Tile bank size: {options.tile_bank_size}")
+            print(f"Tile replenish time: {options.tile_replenish_time}")
+            print(f"Game duration: {options.game_duration}")
+            print(f"Ball speed: {options.initial_ball_speed}")
 
         # Initialize game grid
         self.grid = [
