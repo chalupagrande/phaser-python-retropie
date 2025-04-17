@@ -112,7 +112,7 @@ class Menu:
         self.items.append(MenuItem("Ball Speed", self.options.initial_ball_speed, 0.1, 0.5, options=[0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5], callback=update_ball_speed))
         
         # Navigation option
-        self.items.append(MenuItem("BACK TO MAIN MENU", None))
+        self.items.append(MenuItem("BACK", None))
         
         # Set first item as selected
         self.items[0].selected = True
@@ -172,13 +172,8 @@ class Menu:
         for item in self.items:
             y = item.draw(self.screen, self.width // 2 - 200, y, self.font)
             
-        # Draw navigation option highlight if selected
-        if self.selected_index == len(self.items) - 1:  # BACK TO MAIN MENU
-            back_text = self.font.render("BACK TO MAIN MENU", True, YELLOW)
-            text_rect = back_text.get_rect(center=(self.width // 2, y - 40))
-            pygame.draw.rect(self.screen, RED, 
-                            (text_rect.left - 10, text_rect.top - 5, 
-                             text_rect.width + 20, text_rect.height + 10), 3)
+        # No special drawing for the Back option - it will just be yellow when selected
+        # through the normal MenuItem drawing process
         
         # Update display
         pygame.display.flip()
