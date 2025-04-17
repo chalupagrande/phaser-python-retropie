@@ -72,6 +72,9 @@ class Ball:
                         print(f"Applying tile effect: {tile} at cell {current_cell}")
                     self.apply_tile_effect(tile)
                     grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
+                    
+                    # Determine which player's tile was hit and decrement their count
+                    # We'll implement this in the Game class
             
             # Update last cell
             self.last_cell = current_cell

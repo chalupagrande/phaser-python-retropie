@@ -33,8 +33,14 @@ class Game:
             print(f"Game duration: {options.game_duration}")
             print(f"Ball speed: {options.initial_ball_speed}")
 
-        # Initialize game grid
+        # Initialize game grid with None values (no tiles)
         self.grid = [
+            [None for _ in range(options.grid_size[0])]
+            for _ in range(options.grid_size[1])
+        ]
+        
+        # Grid to track which player placed each tile
+        self.tile_owners = [
             [None for _ in range(options.grid_size[0])]
             for _ in range(options.grid_size[1])
         ]
@@ -114,8 +120,24 @@ class Game:
         self.player1.tile_bank.update()
         self.player2.tile_bank.update()
 
+        # Store the grid before update to detect tile removals
+        old_grid = [row[:] for row in self.grid]
+        
         # Update ball
         self.ball.update(self.grid, self.options.grid_size)
+        
+        # Check for removed tiles and update tile counts
+        for y in range(self.options.grid_size[1]):
+            for x in range(self.options.grid_size[0]):
+                if old_grid[y][x] is not None and self.grid[y][x] is None:
+                    # A tile was removed at this position
+                    owner_id = self.tile_owners[y][x]
+                    if owner_id == 1:
+                        self.player1.tile_bank.remove_tile_from_board()
+                    elif owner_id == 2:
+                        self.player2.tile_bank.remove_tile_from_board()
+                    # Clear the owner
+                    self.tile_owners[y][x] = None
 
         # Calculate goal dimensions in grid coordinates
         goal_height_cells = self.options.goal_size
@@ -250,13 +272,19 @@ class Game:
         p1_bank_text = self.small_font.render(f"P1 Tiles ({p1_tile_keys[0]},{p1_tile_keys[1]},{p1_tile_keys[2]})", True, RED)
         self.screen.blit(p1_bank_text, (20, 15))
         
+        # Display tiles on board count for Player 1
+        tiles_on_board = self.player1.tile_bank.tiles_on_board
+        tile_limit = self.player1.tile_bank.tile_limit
+        p1_count_text = self.small_font.render(f"Tiles: {tiles_on_board}/{tile_limit}", True, RED)
+        self.screen.blit(p1_count_text, (20, 35))
+        
         for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(20 + i * 50, 40, 40, 40)
+            bank_rect = pygame.Rect(20 + i * 50, 55, 40, 40)
             pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
             pygame.draw.rect(self.screen, RED, bank_rect, 2)
             
             if self.player1.tile_bank.slots[i] is not None:
-                self.draw_tile(20 + i * 50, 40, self.player1.tile_bank.slots[i], 40)
+                self.draw_tile(20 + i * 50, 55, self.player1.tile_bank.slots[i], 40)
         
         # Draw Player 2 tile bank (right side)
         p2_tile_keys = [
@@ -268,13 +296,20 @@ class Game:
         p2_text_width = p2_bank_text.get_width()
         self.screen.blit(p2_bank_text, (self.width - p2_text_width - 20, 15))
         
+        # Display tiles on board count for Player 2
+        tiles_on_board = self.player2.tile_bank.tiles_on_board
+        tile_limit = self.player2.tile_bank.tile_limit
+        p2_count_text = self.small_font.render(f"Tiles: {tiles_on_board}/{tile_limit}", True, BLUE)
+        p2_count_width = p2_count_text.get_width()
+        self.screen.blit(p2_count_text, (self.width - p2_count_width - 20, 35))
+        
         for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, 40, 40)
+            bank_rect = pygame.Rect(self.width - 20 - (self.options.tile_bank_size - i) * 50, 55, 40, 40)
             pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
             pygame.draw.rect(self.screen, BLUE, bank_rect, 2)
             
             if self.player2.tile_bank.slots[i] is not None:
-                self.draw_tile(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, self.player2.tile_bank.slots[i], 40)
+                self.draw_tile(self.width - 20 - (self.options.tile_bank_size - i) * 50, 55, self.player2.tile_bank.slots[i], 40)
         
         # Draw grid (shifted down to accommodate the top UI)
         for y in range(self.options.grid_size[1]):
@@ -426,10 +461,18 @@ class Game:
                 tile = player.tile_bank.use_tile(slot_index)
                 if tile:
                     self.grid[player.cursor_pos[1]][player.cursor_pos[0]] = tile
+                    # Track which player placed this tile
+                    self.tile_owners[player.cursor_pos[1]][player.cursor_pos[0]] = player.id
                     
     def reset_game(self):
         # Reset grid
         self.grid = [
+            [None for _ in range(self.options.grid_size[0])]
+            for _ in range(self.options.grid_size[1])
+        ]
+        
+        # Reset tile owners
+        self.tile_owners = [
             [None for _ in range(self.options.grid_size[0])]
             for _ in range(self.options.grid_size[1])
         ]

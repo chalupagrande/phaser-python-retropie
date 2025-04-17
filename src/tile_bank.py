@@ -11,7 +11,7 @@ class TileBank:
         self.tile_limit = tile_limit
         self.slots = [None] * size
         self.replenish_timers = [0] * size
-        self.tiles_placed = 0  # Track how many tiles have been placed
+        self.tiles_on_board = 0  # Track how many tiles are currently on the board
 
         # Fill bank initially
         for i in range(size):
@@ -25,11 +25,11 @@ class TileBank:
             tile = self.slots[slot_index]
             self.slots[slot_index] = None
             
-            # Increment the tiles placed counter
-            self.tiles_placed += 1
+            # Increment the tiles on board counter
+            self.tiles_on_board += 1
             
             # If we're under the tile limit, replenish immediately
-            if self.tiles_placed <= self.tile_limit:
+            if self.tiles_on_board < self.tile_limit:
                 self.replenish_timers[slot_index] = 0
             else:
                 # Otherwise use the delay
@@ -46,7 +46,12 @@ class TileBank:
                 
     def reset(self):
         """Reset the tile bank for a new game"""
-        self.tiles_placed = 0
+        self.tiles_on_board = 0
         self.replenish_timers = [0] * self.size
         for i in range(self.size):
             self.slots[i] = random.choice(list(TileType))
+            
+    def remove_tile_from_board(self):
+        """Called when a tile is removed from the board (e.g., when ball hits it)"""
+        if self.tiles_on_board > 0:
+            self.tiles_on_board -= 1
