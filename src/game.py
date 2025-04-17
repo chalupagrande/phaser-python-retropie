@@ -14,10 +14,8 @@ class Game:
         self.options = options
 
         # Calculate window dimensions based on grid
-        self.width = (
-            options.grid_size[0] * options.cell_size + 200
-        )  # Extra space for UI
-        self.height = options.grid_size[1] * options.cell_size
+        self.width = options.grid_size[0] * options.cell_size
+        self.height = options.grid_size[1] * options.cell_size + 100  # Extra space for UI at top
 
         # Initialize display
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -207,13 +205,64 @@ class Game:
     def draw(self):
         # Fill background
         self.screen.fill(WHITE)
-
-        # Draw grid
+        
+        # Draw top UI bar
+        pygame.draw.rect(self.screen, LIGHT_GRAY, (0, 0, self.width, 100))
+        
+        # Draw scores in the center
+        score_text = self.font.render(f"Score: P1 {self.player1.score} - {self.player2.score} P2", True, BLACK)
+        score_rect = score_text.get_rect(center=(self.width // 2, 25))
+        self.screen.blit(score_text, score_rect)
+        
+        # Draw time remaining in the center
+        time_left = max(0, self.options.game_duration - (time.time() - self.start_time))
+        minutes = int(time_left // 60)
+        seconds = int(time_left % 60)
+        time_text = self.font.render(f"Time: {minutes:02}:{seconds:02}", True, BLACK)
+        time_rect = time_text.get_rect(center=(self.width // 2, 60))
+        self.screen.blit(time_text, time_rect)
+        
+        # Draw Player 1 tile bank (left side)
+        p1_tile_keys = [
+            pygame.key.name(self.options.p1_controls['tile1']),
+            pygame.key.name(self.options.p1_controls['tile2']),
+            pygame.key.name(self.options.p1_controls['tile3'])
+        ]
+        p1_bank_text = self.small_font.render(f"P1 Tiles ({p1_tile_keys[0]},{p1_tile_keys[1]},{p1_tile_keys[2]})", True, RED)
+        self.screen.blit(p1_bank_text, (20, 15))
+        
+        for i in range(self.options.tile_bank_size):
+            bank_rect = pygame.Rect(20 + i * 50, 40, 40, 40)
+            pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
+            pygame.draw.rect(self.screen, RED, bank_rect, 2)
+            
+            if self.player1.tile_bank.slots[i] is not None:
+                self.draw_tile(20 + i * 50, 40, self.player1.tile_bank.slots[i], 40)
+        
+        # Draw Player 2 tile bank (right side)
+        p2_tile_keys = [
+            pygame.key.name(self.options.p2_controls['tile1']),
+            pygame.key.name(self.options.p2_controls['tile2']),
+            pygame.key.name(self.options.p2_controls['tile3'])
+        ]
+        p2_bank_text = self.small_font.render(f"P2 Tiles ({p2_tile_keys[0]},{p2_tile_keys[1]},{p2_tile_keys[2]})", True, BLUE)
+        p2_text_width = p2_bank_text.get_width()
+        self.screen.blit(p2_bank_text, (self.width - p2_text_width - 20, 15))
+        
+        for i in range(self.options.tile_bank_size):
+            bank_rect = pygame.Rect(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, 40, 40)
+            pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
+            pygame.draw.rect(self.screen, BLUE, bank_rect, 2)
+            
+            if self.player2.tile_bank.slots[i] is not None:
+                self.draw_tile(self.width - 20 - (self.options.tile_bank_size - i) * 50, 40, self.player2.tile_bank.slots[i], 40)
+        
+        # Draw grid (shifted down to accommodate the top UI)
         for y in range(self.options.grid_size[1]):
             for x in range(self.options.grid_size[0]):
                 rect = pygame.Rect(
                     x * self.options.cell_size,
-                    y * self.options.cell_size,
+                    y * self.options.cell_size + 100,  # Shift down by 100px
                     self.options.cell_size,
                     self.options.cell_size,
                 )
@@ -223,14 +272,14 @@ class Game:
                 if self.grid[y][x] is not None:
                     self.draw_tile(
                         x * self.options.cell_size,
-                        y * self.options.cell_size,
+                        y * self.options.cell_size + 100,  # Shift down by 100px
                         self.grid[y][x],
                         self.options.cell_size,
                     )
 
-        # Draw goals
+        # Draw goals (shifted down to accommodate the top UI)
         goal_height = self.options.goal_size * self.options.cell_size
-        goal_y = (self.height - goal_height) // 2
+        goal_y = (self.height - goal_height) // 2 + 50  # Adjust for the top UI
 
         # Player 1 goal (left)
         goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
@@ -242,10 +291,10 @@ class Game:
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
 
-        # Draw player cursors
+        # Draw player cursors (shifted down to accommodate the top UI)
         p1_cursor_rect = pygame.Rect(
             self.player1.cursor_pos[0] * self.options.cell_size,
-            self.player1.cursor_pos[1] * self.options.cell_size,
+            self.player1.cursor_pos[1] * self.options.cell_size + 100,  # Shift down by 100px
             self.options.cell_size,
             self.options.cell_size,
         )
@@ -253,84 +302,21 @@ class Game:
 
         p2_cursor_rect = pygame.Rect(
             self.player2.cursor_pos[0] * self.options.cell_size,
-            self.player2.cursor_pos[1] * self.options.cell_size,
+            self.player2.cursor_pos[1] * self.options.cell_size + 100,  # Shift down by 100px
             self.options.cell_size,
             self.options.cell_size,
         )
         pygame.draw.rect(self.screen, self.player2.cursor_color, p2_cursor_rect, 3)
 
-        # Draw ball
+        # Draw ball (shifted down to accommodate the top UI)
         ball_radius = self.options.cell_size // 3
         ball_x = int(
             self.ball.pos[0] * self.options.cell_size + self.options.cell_size // 2
         )
         ball_y = int(
-            self.ball.pos[1] * self.options.cell_size + self.options.cell_size // 2
+            self.ball.pos[1] * self.options.cell_size + self.options.cell_size // 2 + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
-
-        # Draw UI sidebar
-        sidebar_x = self.options.grid_size[0] * self.options.cell_size
-        pygame.draw.rect(self.screen, LIGHT_GRAY, (sidebar_x, 0, 200, self.height))
-
-        # Draw scores
-        score_text = self.font.render(f"Score", True, BLACK)
-        self.screen.blit(score_text, (sidebar_x + 70, 20))
-
-        p1_score = self.font.render(f"P1: {self.player1.score}", True, RED)
-        self.screen.blit(p1_score, (sidebar_x + 20, 60))
-
-        p2_score = self.font.render(f"P2: {self.player2.score}", True, BLUE)
-        self.screen.blit(p2_score, (sidebar_x + 20, 100))
-
-        # Draw time remaining
-        time_left = max(0, self.options.game_duration - (time.time() - self.start_time))
-        minutes = int(time_left // 60)
-        seconds = int(time_left % 60)
-        time_text = self.font.render(f"Time: {minutes:02}:{seconds:02}", True, BLACK)
-        self.screen.blit(time_text, (sidebar_x + 20, 150))
-
-        # Draw tile banks
-        bank_title = self.font.render("Tile Bank", True, BLACK)
-        self.screen.blit(bank_title, (sidebar_x + 50, 200))
-
-        # Get key names for display
-        p1_tile_keys = [
-            pygame.key.name(self.options.p1_controls['tile1']),
-            pygame.key.name(self.options.p1_controls['tile2']),
-            pygame.key.name(self.options.p1_controls['tile3'])
-        ]
-        p1_bank_text = self.small_font.render(f"Player 1 ({p1_tile_keys[0]},{p1_tile_keys[1]},{p1_tile_keys[2]})", True, RED)
-        self.screen.blit(p1_bank_text, (sidebar_x + 20, 240))
-
-        for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(sidebar_x + 20 + i * 50, 270, 40, 40)
-            pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
-            pygame.draw.rect(self.screen, RED, bank_rect, 2)
-
-            if self.player1.tile_bank.slots[i] is not None:
-                self.draw_tile(
-                    sidebar_x + 20 + i * 50, 270, self.player1.tile_bank.slots[i], 40
-                )
-
-        # Get key names for display
-        p2_tile_keys = [
-            pygame.key.name(self.options.p2_controls['tile1']),
-            pygame.key.name(self.options.p2_controls['tile2']),
-            pygame.key.name(self.options.p2_controls['tile3'])
-        ]
-        p2_bank_text = self.small_font.render(f"Player 2 ({p2_tile_keys[0]},{p2_tile_keys[1]},{p2_tile_keys[2]})", True, BLUE)
-        self.screen.blit(p2_bank_text, (sidebar_x + 20, 330))
-
-        for i in range(self.options.tile_bank_size):
-            bank_rect = pygame.Rect(sidebar_x + 20 + i * 50, 360, 40, 40)
-            pygame.draw.rect(self.screen, LIGHT_GRAY, bank_rect)
-            pygame.draw.rect(self.screen, BLUE, bank_rect, 2)
-
-            if self.player2.tile_bank.slots[i] is not None:
-                self.draw_tile(
-                    sidebar_x + 20 + i * 50, 360, self.player2.tile_bank.slots[i], 40
-                )
 
         # Draw game over message if needed
         if self.game_over:
