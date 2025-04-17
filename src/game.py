@@ -61,8 +61,28 @@ class Game:
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
+                # Player 1 movement (WASD)
+                if event.key == pygame.K_w:
+                    self.player1.move_cursor(0, -1, self.options.grid_size)
+                elif event.key == pygame.K_s:
+                    self.player1.move_cursor(0, 1, self.options.grid_size)
+                elif event.key == pygame.K_a:
+                    self.player1.move_cursor(-1, 0, self.options.grid_size)
+                elif event.key == pygame.K_d:
+                    self.player1.move_cursor(1, 0, self.options.grid_size)
+                
+                # Player 2 movement (Arrow keys)
+                elif event.key == pygame.K_UP:
+                    self.player2.move_cursor(0, -1, self.options.grid_size)
+                elif event.key == pygame.K_DOWN:
+                    self.player2.move_cursor(0, 1, self.options.grid_size)
+                elif event.key == pygame.K_LEFT:
+                    self.player2.move_cursor(-1, 0, self.options.grid_size)
+                elif event.key == pygame.K_RIGHT:
+                    self.player2.move_cursor(1, 0, self.options.grid_size)
+                
                 # Player 1 tile placement
-                if (
+                elif (
                     event.key == pygame.K_1
                     and 0 <= self.player1.cursor_pos[1] < self.options.grid_size[1]
                     and 0 <= self.player1.cursor_pos[0] < self.options.grid_size[0]
@@ -165,28 +185,7 @@ class Game:
                                 self.player2.cursor_pos[0]
                             ] = tile
 
-        # Continuous cursor movement with key press
-        keys = pygame.key.get_pressed()
-
-        # Player 1 movement (WASD)
-        if keys[pygame.K_w]:
-            self.player1.move_cursor(0, -1, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_s]:
-            self.player1.move_cursor(0, 1, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_a]:
-            self.player1.move_cursor(-1, 0, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_d]:
-            self.player1.move_cursor(1, 0, self.options.grid_size, self.options.cursor_sensitivity)
-
-        # Player 2 movement (Arrow keys)
-        if keys[pygame.K_UP]:
-            self.player2.move_cursor(0, -1, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_DOWN]:
-            self.player2.move_cursor(0, 1, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_LEFT]:
-            self.player2.move_cursor(-1, 0, self.options.grid_size, self.options.cursor_sensitivity)
-        if keys[pygame.K_RIGHT]:
-            self.player2.move_cursor(1, 0, self.options.grid_size, self.options.cursor_sensitivity)
+        # Movement is now handled in the KEYDOWN event, not here
 
     def update(self):
         # Update tile banks
