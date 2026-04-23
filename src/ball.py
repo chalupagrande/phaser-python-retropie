@@ -30,14 +30,16 @@ class Ball:
         goal_center_y = grid_size[1] / 2
         goal_top = goal_center_y - (goal_height_cells / 2)
         goal_bottom = goal_top + goal_height_cells
-        
-        # Check if ball is within goal height range
+
         in_goal_range = goal_top <= new_y <= goal_bottom
-        
-        # Only bounce if not in goal range
-        if (new_x < 0 or new_x >= grid_size[0]) and not in_goal_range:
-            self.velocity[0] *= -1  # Bounce horizontally
-            new_x = max(0.01, min(grid_size[0] - 0.01, old_pos[0]))
+
+        # Field walls sit one column inside the grid edges so the outermost
+        # columns are dedicated goal chambers.
+        field_left = 1
+        field_right = grid_size[0] - 1
+        if (new_x < field_left or new_x >= field_right) and not in_goal_range:
+            self.velocity[0] *= -1
+            new_x = max(field_left + 0.01, min(field_right - 0.01, old_pos[0]))
         
         # Handle vertical boundaries
         if new_y < 0 or new_y >= grid_size[1]:

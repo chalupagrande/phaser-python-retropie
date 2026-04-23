@@ -200,36 +200,42 @@ class Game:
                     # Clear the owner
                     self.tile_owners[y][x] = None
 
-        # Calculate goal dimensions in grid coordinates
         goal_height_cells = self.options.goal_size
         goal_center_y = self.options.grid_size[1] / 2
         goal_top_cell = goal_center_y - (goal_height_cells / 2)
         goal_bottom_cell = goal_top_cell + goal_height_cells
 
+        field_left = 1
+        field_right = self.options.grid_size[0] - 1
+
         if goal_top_cell <= self.ball.pos[1] <= goal_bottom_cell:
-            # Check for left goal (Player 2 scores)
-            if self.ball.pos[0] <= 0.1:  # Use a small threshold to detect goal
+            if self.ball.pos[0] < field_left:
                 self.player2.score += 1
                 print(f"GOAL! Player 2 scores! New score: P1 {self.player1.score} - {self.player2.score} P2")
                 self.ball.reset(self.options.grid_size)
-            # Check for right goal (Player 1 scores)
-            elif self.ball.pos[0] >= self.options.grid_size[0] - 0.1:  # Use a small threshold
+            elif self.ball.pos[0] >= field_right:
                 self.player1.score += 1
                 print(f"GOAL! Player 1 scores! New score: P1 {self.player1.score} - {self.player2.score} P2")
                 self.ball.reset(self.options.grid_size)
-        # Ball hit wall but not goal
-        elif self.ball.pos[0] < 0 or self.ball.pos[0] >= self.options.grid_size[0]:
-            self.ball.velocity[0] *= -1  # Bounce horizontally
+        elif self.ball.pos[0] < field_left or self.ball.pos[0] >= field_right:
+            self.ball.velocity[0] *= -1
 
         # Check if game time is up
         current_time = time.time()
         if current_time - self.start_time >= self.options.game_duration:
             self.game_over = True
 
-    def draw_tile(self, x, y, tile_type, cell_size):
+    def draw_tile(self, x, y, tile_type, cell_size, owner_id=None):
         rect = pygame.Rect(x, y, cell_size, cell_size)
 
-        glyph_color = NEON_YELLOW if tile_type == TileType.SPEED_UP else NEON_CYAN
+        if owner_id == 1:
+            glyph_color = RED
+        elif owner_id == 2:
+            glyph_color = BLUE
+        elif tile_type == TileType.SPEED_UP:
+            glyph_color = NEON_YELLOW
+        else:
+            glyph_color = NEON_CYAN
 
         pygame.draw.rect(self.game_surface, BG_TILE, rect)
         pygame.draw.rect(self.game_surface, glyph_color, rect, 2)
@@ -340,7 +346,7 @@ class Game:
             pygame.draw.rect(self.game_surface, player.cursor_color, slot_rect, 2)
             tile = player.tile_bank.slots[i]
             if tile is not None:
-                self.draw_tile(sx, sy, tile, 40)
+                self.draw_tile(sx, sy, tile, 40, owner_id=player.id)
 
     def _draw_game_over(self):
         overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -392,10 +398,13 @@ class Game:
         self._draw_bank(self.player1, side="left")
         self._draw_bank(self.player2, side="right")
 
-        # Playfield grid (skip cells under tiles)
+        # Playfield grid (skip cells under tiles and the goal-column chambers).
         cell = self.options.cell_size
+        last_col = self.options.grid_size[0] - 1
         for y in range(self.options.grid_size[1]):
             for x in range(self.options.grid_size[0]):
+                if x == 0 or x == last_col:
+                    continue
                 if self.grid[y][x] is None:
                     rect = pygame.Rect(x * cell, y * cell + 100, cell, cell)
                     pygame.draw.rect(self.game_surface, GRID_LINE, rect, 1)
@@ -413,7 +422,11 @@ class Game:
         for y in range(self.options.grid_size[1]):
             for x in range(self.options.grid_size[0]):
                 if self.grid[y][x] is not None:
-                    self.draw_tile(x * cell, y * cell + 100, self.grid[y][x], cell)
+                    self.draw_tile(
+                        x * cell, y * cell + 100,
+                        self.grid[y][x], cell,
+                        owner_id=self.tile_owners[y][x],
+                    )
 
         # Cursor reticles
         self._draw_cursor_brackets(self.player1.cursor_pos, self.player1.cursor_color)
@@ -434,15 +447,20 @@ class Game:
         pygame.display.flip()
 
     def place_tile(self, player, slot_index):
-        """Helper method to place a tile at the player's cursor position"""
-        if (0 <= player.cursor_pos[1] < self.options.grid_size[1] and
-            0 <= player.cursor_pos[0] < self.options.grid_size[0]):
-            if self.grid[player.cursor_pos[1]][player.cursor_pos[0]] is None:
-                tile = player.tile_bank.use_tile(slot_index)
-                if tile:
-                    self.grid[player.cursor_pos[1]][player.cursor_pos[0]] = tile
-                    # Track which player placed this tile
-                    self.tile_owners[player.cursor_pos[1]][player.cursor_pos[0]] = player.id
+        x = player.cursor_pos[0]
+        y = player.cursor_pos[1]
+        # Goal columns (leftmost + rightmost) are non-placeable so the ball
+        # can only enter the goal through its front face.
+        if not (1 <= x < self.options.grid_size[0] - 1):
+            return
+        if not (0 <= y < self.options.grid_size[1]):
+            return
+        if self.grid[y][x] is not None:
+            return
+        tile = player.tile_bank.use_tile(slot_index)
+        if tile:
+            self.grid[y][x] = tile
+            self.tile_owners[y][x] = player.id
                     
     def reset_game(self):
         # Reset grid
