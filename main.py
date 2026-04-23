@@ -1,4 +1,5 @@
 # main.py
+import os
 import pygame
 import sys
 
@@ -8,35 +9,38 @@ from game import Game
 from menu import Menu
 from welcome_screen import WelcomeScreen
 
+MENU_SIZE = (1000, 800)
+
+
+def _create_display():
+    # Dev opt-out for Mac: PHASER_WINDOWED=1 keeps a normal window.
+    # Default path is fullscreen at the Pi's native resolution.
+    if os.environ.get("PHASER_WINDOWED"):
+        return pygame.display.set_mode(MENU_SIZE)
+    info = pygame.display.Info()
+    return pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
+
 
 def main():
-    # Initialize pygame
     pygame.init()
     pygame.font.init()
+    pygame.joystick.init()
 
-    # Create game options with default values
+    joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+    for j in joysticks:
+        j.init()
+
     options = GameOptions()
-    
-    # Create a screen for the welcome screen and menu
-    screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Tile Strategy Game")
-    
+    pygame.display.set_caption("PHASER")
+    screen = _create_display()
+
     while True:
-        # Show welcome screen
-        welcome = WelcomeScreen(screen)
-        choice = welcome.run()
-        
+        choice = WelcomeScreen(screen).run()
+
         if choice == 'start':
-            # Start the game directly
-            game = Game(options)
-            game.run()
-            # After game ends, return to welcome screen
+            Game(options, screen).run()
         elif choice == 'options':
-            # Show options menu
-            menu = Menu(screen, options)
-            menu_result = menu.run()
-            
-            # After options menu, return to welcome screen
+            Menu(screen, options).run()
 
 
 if __name__ == "__main__":

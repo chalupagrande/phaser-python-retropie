@@ -40,3 +40,32 @@ class GameOptions:
             "tile2": pygame.K_o,
             "tile3": pygame.K_p,
         }
+
+        # Per-player input source. Switchable from the options menu.
+        self.p1_input = "keyboard"  # "keyboard" or "gamepad"
+        self.p2_input = "keyboard"
+
+        # Gamepad bindings. Edit in place to calibrate for your cabinet.
+        #   ("button", N)         -> button N is pressed
+        #   ("hat",    H, (x, y)) -> hat H is in direction (x, y); SDL hat Y is +1 up, -1 down
+        #   ("axis",   A, sign)   -> axis A crossed threshold in direction sign (+1/-1)
+        self.p1_gamepad = {
+            "joystick_index": 0,
+            "up":    ("hat", 0, (0, 1)),
+            "down":  ("hat", 0, (0, -1)),
+            "left":  ("hat", 0, (-1, 0)),
+            "right": ("hat", 0, (1, 0)),
+            "tile1": ("button", 0),
+            "tile2": ("button", 1),
+            "tile3": ("button", 2),
+        }
+        self.p2_gamepad = {
+            "joystick_index": 1,
+            "up":    ("hat", 0, (0, 1)),
+            "down":  ("hat", 0, (0, -1)),
+            "left":  ("hat", 0, (-1, 0)),
+            "right": ("hat", 0, (1, 0)),
+            "tile1": ("button", 0),
+            "tile2": ("button", 1),
+            "tile3": ("button", 2),
+        }
