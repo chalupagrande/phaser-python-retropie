@@ -12,28 +12,13 @@ from tile_type import TileType
 class Game:
     def __init__(self, options):
         self.options = options
-        self.debug = False  # Set to True to enable debug output
 
-        # Calculate window dimensions based on grid
         self.width = options.grid_size[0] * options.cell_size
-        self.height = options.grid_size[1] * options.cell_size + 100  # Extra space for UI at top
+        self.height = options.grid_size[1] * options.cell_size + 100
 
-        # Initialize display
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Tile Strategy Game")
-        
-        # Print configured options for debugging
-        if self.debug:
-            print(f"Game initialized with options:")
-            print(f"Grid size: {options.grid_size}")
-            print(f"Cell size: {options.cell_size}")
-            print(f"Goal size: {options.goal_size}")
-            print(f"Tile bank size: {options.tile_bank_size}")
-            print(f"Tile replenish time: {options.tile_replenish_time}")
-            print(f"Game duration: {options.game_duration}")
-            print(f"Ball speed: {options.initial_ball_speed}")
 
-        # Initialize game grid with None values (no tiles)
         self.grid = [
             [None for _ in range(options.grid_size[0])]
             for _ in range(options.grid_size[1])
@@ -61,14 +46,35 @@ class Game:
             options.tile_bank_size, options.tile_replenish_time, options.tile_limit
         )
 
-        # Initialize ball
-        self.ball = Ball(options.grid_size, options.initial_ball_speed)
+        self.ball = Ball(options.grid_size, options.initial_ball_speed, options.goal_size)
 
-        # Game state
         self.start_time = time.time()
         self.game_over = False
+        self.exit_to_menu = False
         self.font = pygame.font.SysFont(None, 36)
         self.small_font = pygame.font.SysFont(None, 24)
+
+        self.key_handlers = self._build_key_handlers()
+
+    def _build_key_handlers(self):
+        p1c = self.options.p1_controls
+        p2c = self.options.p2_controls
+        return {
+            p1c['up']:    lambda: self.player1.move_cursor(0, -1, self.options.grid_size),
+            p1c['down']:  lambda: self.player1.move_cursor(0, 1, self.options.grid_size),
+            p1c['left']:  lambda: self.player1.move_cursor(-1, 0, self.options.grid_size),
+            p1c['right']: lambda: self.player1.move_cursor(1, 0, self.options.grid_size),
+            p1c['tile1']: lambda: self.place_tile(self.player1, 0),
+            p1c['tile2']: lambda: self.place_tile(self.player1, 1),
+            p1c['tile3']: lambda: self.place_tile(self.player1, 2),
+            p2c['up']:    lambda: self.player2.move_cursor(0, -1, self.options.grid_size),
+            p2c['down']:  lambda: self.player2.move_cursor(0, 1, self.options.grid_size),
+            p2c['left']:  lambda: self.player2.move_cursor(-1, 0, self.options.grid_size),
+            p2c['right']: lambda: self.player2.move_cursor(1, 0, self.options.grid_size),
+            p2c['tile1']: lambda: self.place_tile(self.player2, 0),
+            p2c['tile2']: lambda: self.place_tile(self.player2, 1),
+            p2c['tile3']: lambda: self.place_tile(self.player2, 2),
+        }
 
     def handle_input(self):
         for event in pygame.event.get():
@@ -77,43 +83,14 @@ class Game:
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                # Player 1 movement
-                if event.key == self.options.p1_controls['up']:
-                    self.player1.move_cursor(0, -1, self.options.grid_size)
-                elif event.key == self.options.p1_controls['down']:
-                    self.player1.move_cursor(0, 1, self.options.grid_size)
-                elif event.key == self.options.p1_controls['left']:
-                    self.player1.move_cursor(-1, 0, self.options.grid_size)
-                elif event.key == self.options.p1_controls['right']:
-                    self.player1.move_cursor(1, 0, self.options.grid_size)
-                
-                # Player 2 movement
-                elif event.key == self.options.p2_controls['up']:
-                    self.player2.move_cursor(0, -1, self.options.grid_size)
-                elif event.key == self.options.p2_controls['down']:
-                    self.player2.move_cursor(0, 1, self.options.grid_size)
-                elif event.key == self.options.p2_controls['left']:
-                    self.player2.move_cursor(-1, 0, self.options.grid_size)
-                elif event.key == self.options.p2_controls['right']:
-                    self.player2.move_cursor(1, 0, self.options.grid_size)
-                
-                # Player 1 tile placement
-                elif event.key == self.options.p1_controls['tile1']:
-                    self.place_tile(self.player1, 0)
-                elif event.key == self.options.p1_controls['tile2']:
-                    self.place_tile(self.player1, 1)
-                elif event.key == self.options.p1_controls['tile3']:
-                    self.place_tile(self.player1, 2)
-
-                # Player 2 tile placement
-                elif event.key == self.options.p2_controls['tile1']:
-                    self.place_tile(self.player2, 0)
-                elif event.key == self.options.p2_controls['tile2']:
-                    self.place_tile(self.player2, 1)
-                elif event.key == self.options.p2_controls['tile3']:
-                    self.place_tile(self.player2, 2)
-
-        # Movement is now handled in the KEYDOWN event, not here
+                if event.key == pygame.K_ESCAPE:
+                    self.exit_to_menu = True
+                elif self.game_over and event.key == pygame.K_r:
+                    self.reset_game()
+                elif not self.game_over:
+                    handler = self.key_handlers.get(event.key)
+                    if handler:
+                        handler()
 
     def update(self):
         # Update tile banks
@@ -144,12 +121,7 @@ class Game:
         goal_center_y = self.options.grid_size[1] / 2
         goal_top_cell = goal_center_y - (goal_height_cells / 2)
         goal_bottom_cell = goal_top_cell + goal_height_cells
-        
-        # Debug goal position
-        if self.debug:
-            print(f"Goal range: {goal_top_cell} to {goal_bottom_cell}, Ball Y: {self.ball.pos[1]}")
-        
-        # Check if ball is within goal height range
+
         if goal_top_cell <= self.ball.pos[1] <= goal_bottom_cell:
             # Check for left goal (Player 2 scores)
             if self.ball.pos[0] <= 0.1:  # Use a small threshold to detect goal
@@ -339,42 +311,16 @@ class Game:
         goal_top_cell = goal_center_y - (self.options.goal_size / 2)
         goal_y = int(goal_top_cell * self.options.cell_size) + 100  # Add UI offset
 
-        # Player 1 goal (left)
-        goal1_rect = pygame.Rect(0, goal_y, 10, goal_height)
+        goal1_rect = pygame.Rect(0, goal_y, self.options.cell_size, goal_height)
         pygame.draw.rect(self.screen, RED, goal1_rect)
-        
-        # Draw goal area indicator with grid lines
-        goal_area_rect = pygame.Rect(
-            0, goal_y, self.options.cell_size, goal_height
-        )
-        pygame.draw.rect(self.screen, (255, 200, 200, 128), goal_area_rect)  # Semi-transparent red
-        
-        # Draw horizontal lines to show goal cell boundaries
-        for i in range(self.options.goal_size + 1):
-            y_pos = goal_y + i * self.options.cell_size
-            pygame.draw.line(self.screen, RED, (0, y_pos), (self.options.cell_size, y_pos), 1)
 
-        # Player 2 goal (right)
         goal2_rect = pygame.Rect(
-            self.options.grid_size[0] * self.options.cell_size - 10, goal_y, 10, goal_height
+            (self.options.grid_size[0] - 1) * self.options.cell_size,
+            goal_y,
+            self.options.cell_size,
+            goal_height,
         )
         pygame.draw.rect(self.screen, BLUE, goal2_rect)
-        
-        # Draw goal area indicator with grid lines
-        goal_area_rect = pygame.Rect(
-            (self.options.grid_size[0] - 1) * self.options.cell_size, 
-            goal_y, 
-            self.options.cell_size, 
-            goal_height
-        )
-        pygame.draw.rect(self.screen, (200, 200, 255, 128), goal_area_rect)  # Semi-transparent blue
-        
-        # Draw horizontal lines to show goal cell boundaries
-        for i in range(self.options.goal_size + 1):
-            y_pos = goal_y + i * self.options.cell_size
-            pygame.draw.line(self.screen, BLUE, 
-                            ((self.options.grid_size[0] - 1) * self.options.cell_size, y_pos), 
-                            (self.options.grid_size[0] * self.options.cell_size, y_pos), 1)
 
         # Draw player cursors (shifted down to accommodate the top UI)
         p1_cursor_rect = pygame.Rect(
@@ -402,24 +348,6 @@ class Game:
             self.ball.pos[1] * self.options.cell_size + 100  # Shift down by 100px
         )
         pygame.draw.circle(self.screen, BLACK, (ball_x, ball_y), ball_radius)
-        
-        # Draw crosshair at ball center for better visibility
-        pygame.draw.line(self.screen, RED, (ball_x - 5, ball_y), (ball_x + 5, ball_y), 1)
-        pygame.draw.line(self.screen, RED, (ball_x, ball_y - 5), (ball_x, ball_y + 5), 1)
-        
-        # Draw grid cell boundaries for debugging
-        current_cell_x = int(self.ball.pos[0])
-        current_cell_y = int(self.ball.pos[1])
-        cell_rect = pygame.Rect(
-            current_cell_x * self.options.cell_size,
-            current_cell_y * self.options.cell_size + 100,
-            self.options.cell_size,
-            self.options.cell_size
-        )
-        pygame.draw.rect(self.screen, GREEN, cell_rect, 1)
-        
-        # Draw a small dot at the center of the ball for visual reference
-        pygame.draw.circle(self.screen, RED, (ball_x, ball_y), 2)
 
         # Draw game over message if needed
         if self.game_over:
@@ -488,13 +416,8 @@ class Game:
             self.options.grid_size[1] // 2,
         ]
 
-        # Reset tile banks
-        self.player1.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
-        )
-        self.player2.tile_bank = TileBank(
-            self.options.tile_bank_size, self.options.tile_replenish_time, self.options.tile_limit
-        )
+        self.player1.tile_bank.reset()
+        self.player2.tile_bank.reset()
 
         # Reset ball
         self.ball.reset(self.options.grid_size, self.options.initial_ball_speed)
@@ -505,16 +428,11 @@ class Game:
 
     def run(self):
         clock = pygame.time.Clock()
-        while True:
+        while not self.exit_to_menu:
             self.handle_input()
-
+            if self.exit_to_menu:
+                break
             if not self.game_over:
                 self.update()
-            else:
-                # Check for restart
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_r]:
-                    self.reset_game()
-
             self.draw()
             clock.tick(60)

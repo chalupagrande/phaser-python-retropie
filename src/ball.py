@@ -5,22 +5,13 @@ from tile_type import TileType
 
 
 class Ball:
-    def __init__(self, grid_size, initial_speed=0.2):
-        # Position is the center of the ball in grid coordinates
+    def __init__(self, grid_size, initial_speed=0.2, goal_size=3):
         self.pos = [float(grid_size[0]) / 2, float(grid_size[1]) / 2]
-        
-        # Start with vertical movement
         self.velocity = [0, random.choice([-1, 1])]
-        
-        # Speed settings
         self.speed_multiplier = 1.0
         self.base_speed = initial_speed
-        
-        # Track the last cell for tile interaction
+        self.goal_size = goal_size
         self.last_cell = [int(self.pos[0]), int(self.pos[1])]
-        
-        # Debug flag
-        self.debug = True
 
     def update(self, grid, grid_size):
         # Store old position and cell
@@ -35,8 +26,7 @@ class Ball:
         new_x = self.pos[0] + dx
         new_y = self.pos[1] + dy
         
-        # Handle horizontal boundaries - only bounce if not in goal area
-        goal_height_cells = 3  # Match the goal_size in GameOptions
+        goal_height_cells = self.goal_size
         goal_center_y = grid_size[1] / 2
         goal_top = goal_center_y - (goal_height_cells / 2)
         goal_bottom = goal_top + goal_height_cells
@@ -68,13 +58,8 @@ class Ball:
                 
                 tile = grid[current_cell[1]][current_cell[0]]
                 if tile is not None:
-                    if self.debug:
-                        print(f"Applying tile effect: {tile} at cell {current_cell}")
                     self.apply_tile_effect(tile)
-                    grid[current_cell[1]][current_cell[0]] = None  # Remove the tile
-                    
-                    # Determine which player's tile was hit and decrement their count
-                    # We'll implement this in the Game class
+                    grid[current_cell[1]][current_cell[0]] = None
             
             # Update last cell
             self.last_cell = current_cell
@@ -104,9 +89,6 @@ class Ball:
             self.pos[1] = cell_center_y
         elif tile_type == TileType.SPEED_UP:
             self.speed_multiplier += 0.5
-            
-        if self.debug:
-            print(f"New velocity: {self.velocity}, new position: {self.pos}")
 
     def reset(self, grid_size, initial_speed=None):
         # Position the ball exactly at the center of the grid

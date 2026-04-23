@@ -36,18 +36,18 @@ class MenuItem:
     
     def draw(self, screen, x, y, font):
         color = YELLOW if self.selected else WHITE
+
+        if self.value is None:
+            text_surface = font.render(self.text, True, color)
+            screen.blit(text_surface, (x, y))
+            return y + 40
+
         border_color = RED if self.editing else color
-        
-        # Draw item text
         text_surface = font.render(f"{self.text}: ", True, color)
         screen.blit(text_surface, (x, y))
-        
-        # Draw value with arrows (with more space)
-        value_text = str(self.value)
-        value_surface = font.render(f"< {value_text} >", True, border_color)
+        value_surface = font.render(f"< {self.value} >", True, border_color)
         screen.blit(value_surface, (x + 350, y))
-        
-        return y + 40  # Return next y position
+        return y + 40
 
 class Menu:
     def __init__(self, screen, options):
