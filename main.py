@@ -8,6 +8,7 @@ from game_options import GameOptions
 from game import Game
 from menu import Menu
 from welcome_screen import WelcomeScreen
+from calibration import apply_calibration
 
 MENU_SIZE = (1000, 800)
 
@@ -31,6 +32,7 @@ def main():
         j.init()
 
     options = GameOptions()
+    apply_calibration(options)
     pygame.display.set_caption("PHASER")
     screen = _create_display()
 

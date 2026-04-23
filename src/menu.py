@@ -5,15 +5,20 @@ RETRO_FONT = "couriernew,menlo,consolas,monospace"
 
 
 class MenuItem:
-    def __init__(self, text, value, min_value=None, max_value=None, options=None, callback=None):
+    def __init__(self, text, value=None, min_value=None, max_value=None, options=None, callback=None, action=None):
         self.text = text
         self.value = value
         self.min_value = min_value
         self.max_value = max_value
         self.options = options
         self.callback = callback
+        self.action = action
         self.selected = False
         self.editing = False
+
+    def select(self):
+        if self.action:
+            self.action()
 
     def increase(self):
         if self.options:
@@ -133,11 +138,21 @@ class Menu:
             self.options.p2_input = value
 
         self.items.append(MenuItem("P1 Input", self.options.p1_input, options=["keyboard", "gamepad"], callback=update_p1_input))
+        self.items.append(MenuItem("Calibrate P1 Gamepad", action=lambda: self._calibrate(1)))
         self.items.append(MenuItem("P2 Input", self.options.p2_input, options=["keyboard", "gamepad"], callback=update_p2_input))
+        self.items.append(MenuItem("Calibrate P2 Gamepad", action=lambda: self._calibrate(2)))
 
-        self.items.append(MenuItem("Back", None))
+        self.items.append(MenuItem("Back", action=self._go_back))
 
         self.items[0].selected = True
+
+    def _go_back(self):
+        self.result = 'back'
+        self.running = False
+
+    def _calibrate(self, player_id):
+        from calibration import Calibrator
+        Calibrator(self.screen, self.options, player_id).run()
 
     def _nav(self, delta):
         self.items[self.selected_index].selected = False
@@ -145,9 +160,7 @@ class Menu:
         self.items[self.selected_index].selected = True
 
     def _confirm(self):
-        if self.selected_index == len(self.items) - 1:
-            self.result = 'back'
-            self.running = False
+        self.items[self.selected_index].select()
 
     def handle_input(self):
         for event in pygame.event.get():
